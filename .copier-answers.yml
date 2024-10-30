@@ -1,0 +1,12 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: 2024.08.19
+_src_path: gh:scientific-python/cookie
+backend: hatch
+email: rkansal@cern.ch
+full_name: Raghav Kansal
+license: MIT
+org: LPC-HH
+project_name: bbtautau
+project_short_description: Run 3 HH->bbtautau
+url: https://github.com/LPC-HH/bbtautau
+vcs: false

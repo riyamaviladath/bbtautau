@@ -1,2 +1,98 @@
-# bbtautau
-Run 3 HH→bbtautau
+# HHbbtautau
+
+
+[![Actions Status][actions-badge]][actions-link]
+[![Codestyle](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/LPC-HH/bbtautau/main.svg)](https://results.pre-commit.ci/latest/github/LPC-HH/bbtautau/main)
+<!-- [![Documentation Status][rtd-badge]][rtd-link] -->
+
+<!-- SPHINX-START -->
+
+<!-- prettier-ignore-start -->
+[actions-badge]:            https://github.com/LPC-HH/bbtautau/workflows/CI/badge.svg
+[actions-link]:             https://github.com/LPC-HH/bbtautau/actions
+[conda-badge]:              https://img.shields.io/conda/vn/conda-forge/bbtautau
+[conda-link]:               https://github.com/conda-forge/bbtautau-feedstock
+[github-discussions-badge]: https://img.shields.io/static/v1?label=Discussions&message=Ask&color=blue&logo=github
+[github-discussions-link]:  https://github.com/LPC-HH/bbtautau/discussions
+[pypi-link]:                https://pypi.org/project/bbtautau/
+[pypi-platforms]:           https://img.shields.io/pypi/pyversions/bbtautau
+[pypi-version]:             https://img.shields.io/pypi/v/bbtautau
+[rtd-badge]:                https://readthedocs.org/projects/bbtautau/badge/?version=latest
+[rtd-link]:                 https://bbtautau.readthedocs.io/en/latest/?badge=latest
+
+<!-- prettier-ignore-end -->
+
+Search for two boosted (high transverse momentum) Higgs bosons (H) decaying to two beauty quarks (b) and two tau leptons.
+
+
+- [HHbbtautau](#hhbbtautau)
+  - [Setting up package](#setting-up-package)
+    - [Creating a virtual environment](#creating-a-virtual-environment)
+    - [Installing package](#installing-package)
+    - [Troubleshooting](#troubleshooting)
+  - [Running coffea processors](#running-coffea-processors)
+    - [Setup](#setup)
+
+
+## Setting up package
+
+### Creating a virtual environment
+
+First, create a virtual environment (`micromamba` is recommended):
+
+```bash
+# Download the micromamba setup script (change if needed for your machine https://mamba.readthedocs.io/en/latest/installation/micromamba-installation.html)
+# Install: (the micromamba directory can end up taking O(1-10GB) so make sure the directory you're using allows that quota)
+"${SHELL}" <(curl -L micro.mamba.pm/install.sh)
+# You may need to restart your shell
+micromamba create -n hh python=3.10 -c conda-forge
+micromamba activate hh
+```
+
+### Installing package
+
+**Remember to install this in your mamba environment**.
+
+```bash
+# Clone the repository
+git clone https://github.com/LPC-HH/bbtautau.git
+cd bbtautau
+# Perform an editable installation
+pip install -e .
+# for committing to the repository
+pip install pre-commit
+pre-commit install
+```
+
+### Troubleshooting
+
+- If your default `python` in your environment is not Python 3, make sure to use
+  `pip3` and `python3` commands instead.
+
+- You may also need to upgrade `pip` to perform the editable installation:
+
+```bash
+python3 -m pip install -e .
+```
+
+## Running coffea processors
+
+### Setup
+
+For submitting to condor, all you need is python >= 3.7.
+
+For running locally, follow the same virtual environment setup instructions
+above and install `coffea`
+
+```bash
+micromamba activate hh
+pip install coffea
+```
+
+Clone the repository:
+
+```
+git clone https://github.com/LPC-HH/bbtautau/
+pip install -e .
+```
