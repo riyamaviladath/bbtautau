@@ -46,7 +46,7 @@ First, create a virtual environment (`micromamba` is recommended):
 # Install: (the micromamba directory can end up taking O(1-10GB) so make sure the directory you're using allows that quota)
 "${SHELL}" <(curl -L micro.mamba.pm/install.sh)
 # You may need to restart your shell
-micromamba create -n hh python=3.10 -c conda-forge
+micromamba env create -f environment.yaml
 micromamba activate hh
 ```
 

@@ -1,0 +1,9 @@
+name: hh
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python==3.11
+  - xrootd==5.7.1
+  - pip:
+    - -r requirements.txt

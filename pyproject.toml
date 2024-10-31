@@ -4,11 +4,11 @@ build-backend = "hatchling.build"
 
 
 [project]
-name = "Run 3 HH->bbtautau"
+name = "bbtautau"
 authors = [
   { name = "Raghav Kansal", email = "rkansal@cern.ch" },
 ]
-description = "bbtautau"
+description = "Run 3 HH->bbtautau"
 readme = "README.md"
 license.file = "LICENSE"
 requires-python = ">=3.8"
@@ -61,14 +61,14 @@ Changelog = "https://github.com/LPC-HH/bbtautau/releases"
 
 [tool.hatch]
 version.path = "src/bbtautau/__init__.py"
-envs.default.dependencies = [
-  "pytest",
-  "pytest-cov",
-]
 
 [tool.hatch.envs.default]
 features = ["test"]
 scripts.test = "pytest {args}"
+dependencies = [
+  "pytest",
+  "pytest-cov",
+]
 
 [tool.pytest.ini_options]
 minversion = "6.0"

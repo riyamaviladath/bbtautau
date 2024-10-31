@@ -1,4 +1,5 @@
 awkward==1.10.4
+black
 cachetools==5.3.1
 cloudpickle>=3.0.0
 coffea==0.7.21
@@ -9,8 +10,10 @@ lz4
 mplhep==0.3.46
 numpy==1.23.5
 pandas==2.0.3
+pre-commit
 pyarrow==12.0.1
 PyYAML==6.0.1
+ruff
 scikit-learn
 setuptools<71
 tabulate
