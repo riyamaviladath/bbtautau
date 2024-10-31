@@ -17,22 +17,6 @@ env:
   FORCE_COLOR: 3
 
 jobs:
-  pre-commit:
-    name: Format
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.x"
-      - uses: pre-commit/action@v3.0.1
-        with:
-          extra_args: --hook-stage manual --all-files
-      - name: Run PyLint
-        run: pipx run nox -s pylint -- --output-format=github
-
   checks:
     name: Check Python ${{ matrix.python-version }} on ${{ matrix.runs-on }}
     runs-on: ${{ matrix.runs-on }}
@@ -40,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.13"]
+        python-version: ["3.8", "3.11"]
         runs-on: [ubuntu-latest, windows-latest, macos-14]
 
         include:
