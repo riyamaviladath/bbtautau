@@ -101,3 +101,11 @@ Clone the repository:
 git clone https://github.com/LPC-HH/bbtautau/
 pip install -e .
 ```
+
+### Running locally
+
+For testing, e.g.:
+
+```bash
+python src/run.py --samples HHbbtt --subsamples GluGlutoHHto2B2Tau_kl-1p00_kt-1p00_c2-0p00_LHEweights_TuneCP5_13p6TeV_powheg-pythia8 --starti 0 --endi 1 --year 2022 --processor skimmer
+```
