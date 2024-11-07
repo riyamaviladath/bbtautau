@@ -59,7 +59,8 @@ def gen_selection_HHbbtautau(
 
     # saving whether H->bb or H->tautau
     higgs_children = higgs.children
-    GenHiggsVars["GenHiggsChildren"] = np.abs(higgs_children.pdgId[:, :, 0]).to_numpy()
+    # pad_val is necessary to avoid a numpy MaskedArray even though all events have exactly 2 Higgs'
+    GenHiggsVars["GenHiggsChildren"] = pad_val(higgs_children.pdgId[:, :, 0], 2, axis=1)
 
     # finding bb and VV children
     is_bb = np.abs(higgs_children.pdgId) == PDGID.b
@@ -71,11 +72,11 @@ def gen_selection_HHbbtautau(
     add_selection("has_bbtautau", has_bb * has_tt, *selection_args)
 
     bb = ak.flatten(higgs_children[is_bb], axis=2)
-    GenbbVars = {f"Genbb{key}": bb[var] for (var, key) in P4.items()}
+    GenbbVars = {f"Genbb{key}": pad_val(bb[var], 2, axis=1) for (var, key) in P4.items()}
 
     taus = higgs_children[is_tt]
     flat_taus = ak.flatten(taus, axis=2)
-    GenTauVars = {f"GenTau{key}": flat_taus[var] for (var, key) in P4.items()}
+    GenTauVars = {f"GenTau{key}": pad_val(flat_taus[var], 2, axis=1) for (var, key) in P4.items()}
 
     tau_children = ak.flatten(taus.children, axis=2)
     tau_children = _iterate_children(tau_children, PDGID.tau)
@@ -111,12 +112,12 @@ def gen_selection_HHbbtautau(
     Hbb_match = (Hbb_match * ~Htt_match) + (bbdr <= ttdr) * (Hbb_match * Htt_match)
     Htt_match = (Htt_match * ~Hbb_match) + (bbdr > ttdr) * (Hbb_match * Htt_match)
 
-    GenMatchingVars = {
-        "ak8FatJetHbb": pad_val(Hbb_match, 2, axis=1),
-        "ak8FatJetHtt": pad_val(Htt_match, 2, axis=1),
-    }
+    # GenMatchingVars = {
+    #     "ak8FatJetHbb": pad_val(Hbb_match, 2, axis=1),
+    #     "ak8FatJetHtt": pad_val(Htt_match, 2, axis=1),
+    # }
 
-    return {**GenHiggsVars, **GenbbVars, **GenTauVars, **GenMatchingVars}
+    return {**GenHiggsVars, **GenbbVars, **GenTauVars}  # , **GenMatchingVars}
 
 
 def gen_selection_HH4b(

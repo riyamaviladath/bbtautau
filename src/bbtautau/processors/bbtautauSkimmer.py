@@ -201,7 +201,7 @@ class bbtautauSkimmer(SkimmerABC):
         self.jmsr_vars = ["msoftdrop", "particleNet_mass_legacy", "ParTmassVis", "ParTmassRes"]
 
         # particlenet legacy variables
-        pnet_vars = ["PXbb", "PQCD", "PQCDb", "PQCDbb", "PQCDothers", "mass"]
+        pnet_vars = ["Xbb", "QCD", "QCDb", "QCDbb", "QCDothers", "mass"]
         self.skim_vars["FatJet"] = {
             **self.skim_vars["FatJet"],
             **{f"particleNetLegacy_{var}": f"PNet{var}Legacy" for var in pnet_vars},
@@ -540,7 +540,7 @@ class bbtautauSkimmer(SkimmerABC):
 
         # metfilters
         cut_metfilters = np.ones(len(events), dtype="bool")
-        for mf in self.met_filters:
+        for mf in utils.met_filters:
             if mf in events.Flag.fields:
                 cut_metfilters = cut_metfilters & events.Flag[mf]
         add_selection("met_filters", cut_metfilters, *selection_args)

@@ -10,8 +10,9 @@ import argparse
 from pathlib import Path
 
 import yaml
-from boostedhh import run_utils, xsecs
+from boostedhh import run_utils
 from boostedhh.hh_vars import DATA_SAMPLES
+from boostedhh.xsecs import xsecs
 
 from bbtautau import bbtautau_utils
 
