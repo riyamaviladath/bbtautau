@@ -180,6 +180,7 @@ src/HH4b/boosted/**/*.pdf
 src/HH4b/boosted/**/*roc_dict.pkl
 src/HH4b/boosted/**/*.pkl
 **/*test.ipynb
+**/*.json
 
 running_jobs.txt
 

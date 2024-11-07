@@ -3,10 +3,10 @@
 e.g.
 
 ```bash
-python index_private_nano.py --users rkansal --samples HHbbtt
+python ../boostedhh/data/index_private_nano.py --users rkansal --samples HHbbtt
 ```
 
 For full list of options:
 ```bash
-python index_private_nano.py -h
+python ../boostedhh/data/index_private_nano.py -h
 ```

@@ -5,5 +5,6 @@ channels:
 dependencies:
   - python==3.11
   - xrootd==5.7.1
+  - root==6.32.2
   - pip:
     - -r requirements.txt
