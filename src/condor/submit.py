@@ -13,6 +13,8 @@ from string import Template
 import yaml
 from boostedhh import run_utils, submit_utils
 
+from bbtautau import bbtautau_utils
+
 t2_redirectors = {
     "lpc": "root://cmseos.fnal.gov//",
     "ucsd": "root://redirector.t2.ucsd.edu:1095//",
@@ -49,6 +51,7 @@ if __name__ == "__main__":
     run_utils.parse_common_hh_args(parser)
     run_utils.parse_common_run_args(parser)
     submit_utils.parse_submit_args(parser)
+    bbtautau_utils.parse_common_run_args(parser)
     args = parser.parse_args()
 
     # YAML check
