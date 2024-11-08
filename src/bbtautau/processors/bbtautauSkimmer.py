@@ -469,7 +469,7 @@ class bbtautauSkimmer(SkimmerABC):
 
         zeros = np.zeros(len(events), dtype="bool")
         HLTVars = {
-            trigger: (
+            f"HLT_{trigger}": (
                 events.HLT[trigger].to_numpy().astype(int)
                 if trigger in events.HLT.fields
                 else zeros
