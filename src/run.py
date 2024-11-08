@@ -44,7 +44,7 @@ def main(args):
     )
 
     save_parquet = {"skimmer": True}[args.processor]
-    save_root = {"skimmer": False}[args.processor]
+    save_root = {"skimmer": True}[args.processor]
 
     skipbadfiles = True
 
