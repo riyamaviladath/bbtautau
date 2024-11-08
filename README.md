@@ -43,7 +43,7 @@ First, create a virtual environment (`micromamba` is recommended):
 
 ```bash
 # Clone the repository
-git clone -r https://github.com/LPC-HH/bbtautau.git
+git clone --recursive https://github.com/LPC-HH/bbtautau.git
 cd bbtautau
 # Download the micromamba setup script (change if needed for your machine https://mamba.readthedocs.io/en/latest/installation/micromamba-installation.html)
 # Install: (the micromamba directory can end up taking O(1-10GB) so make sure the directory you're using allows that quota)
@@ -108,4 +108,12 @@ For testing, e.g.:
 
 ```bash
 python src/run.py --samples HHbbtt --subsamples GluGlutoHHto2B2Tau_kl-1p00_kt-1p00_c2-0p00_LHEweights_TuneCP5_13p6TeV_powheg-pythia8 --starti 0 --endi 1 --year 2022 --processor skimmer
+```
+
+### Condor jobs
+
+A single sample / subsample:
+
+```bash
+python src/condor/submit.py --analysis bbtautau --git-branch signal_study --site ucsd --save-sites ucsd lpc --processor skimmer --samples HHbbtt --subsamples GluGlutoHHto2B2Tau_kl-1p00_kt-1p00_c2-0p00_LHEweights_TuneCP5_13p6TeV_powheg-pythia8 --files-per-job 5 --tag 24Nov7Signal --submit
 ```
