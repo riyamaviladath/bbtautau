@@ -19,7 +19,7 @@
             ],
           "files_per_job": 10,
         },
-      "JetMET": { "files_per_job": 10 },
+      "JetMET": { "files_per_job": 10, "chunksize": 10000 },
       "EGamma": { "files_per_job": 10 },
       "Muon": { "files_per_job": 10 },
     },
