@@ -145,13 +145,13 @@ class bbtautauSkimmer(SkimmerABC):
                     # jets
                     "AK8PFJet425_SoftDropMass40",
                     "AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
-                    "AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30"
+                    "AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30",
                     "QuadPFJet70_50_40_35_PFBTagParticleNet_2BTagSum0p65",
                     # particlenetbb + lepton
                     "IsoMu50_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetBB0p35",
                     "Ele50_CaloIdVT_GsfTrkIdT_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetBB0p35",
                     # single-tau
-                    "LooseDeepTauPFTauHPS180_L2NN_eta2p1"
+                    "LooseDeepTauPFTauHPS180_L2NN_eta2p1",
                     # di-tau
                     "DoubleMediumDeepTauIsoPFTauHPS30_L2NN_eta2p1_PFJet60",
                     "DoubleMediumDeepTauPFTauHPS35_L2NN_eta2p1",
