@@ -1,0 +1,31 @@
+# Tau triggers Run 3 https://twiki.cern.ch/twiki/bin/view/CMSPublic/Run3TauHLT
+from __future__ import annotations
+
+HLTs = [
+    "HLT_AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
+    "HLT_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30",
+    "HLT_LooseDeepTauPFTauHPS180_L2NN_eta2p1",
+    "HLT_AK8PFJet425_SoftDropMass40",
+    "HLT_QuadPFJet70_50_40_35_PFBTagParticleNet_2BTagSum0p65",
+    "HLT_QuadPFJet103_88_75_15_PFBTagDeepJet_1p3_VBF2",
+    "HLT_QuadPFJet103_88_75_15_DoublePFBTagDeepJet_1p3_7p7_VBF1",
+    "HLT_DoubleMediumDeepTauPFTauHPS35_L2NN_eta2p1",
+    "HLT_DoubleMediumDeepTauIsoPFTauHPS30_L2NN_eta2p1_PFJet60",
+    "HLT_DoubleMediumDeepTauPFTauHPS30_L2NN_eta2p1_PFJet60",
+    "HLT_DoubleMediumDeepTauPFTauHPS30_L2NN_eta2p1_PFJet75",
+    "HLT_Mu50",
+    "HLT_IsoMu20_eta2p1_LooseDeepTauPFTauHPS27_eta2p1_CrossL1",
+    "HLT_IsoMu24_eta2p1_LooseDeepTauPFTauHPS180_eta2p1",
+    "HLT_IsoMu24_eta2p1_LooseDeepTauPFTauHPS30_eta2p1_CrossL1",
+    "HLT_IsoMu24_eta2p1_MediumDeepTauPFTauHPS35_L2NN_eta2p1_CrossL1",
+    "HLT_IsoMu24_eta2p1_MediumDeepTauPFTauHPS30_L2NN_eta2p1_CrossL1",
+    "HLT_IsoMu24_eta2p1_MediumDeepTauPFTauHPS45_L2NN_eta2p1_CrossL1",
+    "HLT_IsoMu20_eta2p1_TightChargedIsoPFTauHPS27_eta2p1_CrossL1",
+    "HLT_IsoMu20_eta2p1_TightChargedIsoPFTauHPS27_eta2p1_TightID_CrossL1",
+    "HLT_Ele30_WPTight_Gsf",
+    "HLT_Ele115_CaloIdVT_GsfTrkIdT",
+    "HLT_Ele50_CaloIdVT_GsfTrkIdT_PFJet165",
+    "HLT_Photon200",
+    "HLT_Ele24_eta2p1_WPTight_Gsf_LooseDeepTauPFTauHPS30_eta2p1_CrossL1",
+    "HLT_Ele24_eta2p1_WPTight_Gsf_TightChargedIsoPFTauHPS30_eta2p1_CrossL1",
+]

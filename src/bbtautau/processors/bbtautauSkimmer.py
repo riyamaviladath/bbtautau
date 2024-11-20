@@ -248,8 +248,10 @@ class bbtautauSkimmer(SkimmerABC):
             "Xtauhtaue",
             "Xtauhtauh",
             "Xtauhtaum",
-            # "massRes",
-            # "massVis",
+            "massResCorr",
+            "massVisCorr",
+            "massResApplied",
+            "massVisApplied",
         ]
 
         self.skim_vars["FatJet"] = {
