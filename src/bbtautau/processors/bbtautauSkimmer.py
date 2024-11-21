@@ -95,6 +95,7 @@ class bbtautauSkimmer(SkimmerABC):
     }
 
     fatjet_selection = {  # noqa: RUF012
+        "object_pt": 170,
         "pt": 230,
         "eta": 2.5,
         "msd": 50,

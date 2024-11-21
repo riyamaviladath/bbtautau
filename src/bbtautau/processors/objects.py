@@ -34,7 +34,8 @@ def get_ak8jets(fatjets: FatJetArray):
 # ak8 jet definition
 def good_ak8jets(
     fatjets: FatJetArray,
-    pt: float,
+    object_pt: float,  # select objects based on this
+    pt: float,  # make event selections based on this  # noqa: ARG001
     eta: float,
     msd: float,  # noqa: ARG001
     mreg: float,  # noqa: ARG001
@@ -42,7 +43,7 @@ def good_ak8jets(
 ):
     fatjet_sel = (
         fatjets.isTight
-        & (fatjets.pt > pt)
+        & (fatjets.pt > object_pt)
         & (abs(fatjets.eta) < eta)
         # & ((fatjets.msoftdrop > msd) | (fatjets[mreg_str] > mreg))
     )
