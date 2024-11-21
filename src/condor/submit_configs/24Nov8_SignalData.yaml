@@ -19,9 +19,9 @@
             ],
           "files_per_job": 10,
         },
-      "JetMET": { "files_per_job": 5, "chunksize": 10000 },
-      "EGamma": { "files_per_job": 10 },
-      "Muon": { "files_per_job": 10 },
-      "Tau": { "files_per_job": 40 },
+      "JetMET": { "files_per_job": 8, "chunksize": 10000 },
+      "EGamma": { "files_per_job": 20 },
+      "Muon": { "files_per_job": 20 },
+      "Tau": { "files_per_job": 100 },
     },
 }
