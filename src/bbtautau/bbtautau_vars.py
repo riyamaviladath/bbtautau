@@ -15,6 +15,9 @@ HLT_dict = {
         "HLT_QuadPFJet103_88_75_15_PFBTagDeepJet_1p3_VBF2",
         "HLT_QuadPFJet103_88_75_15_DoublePFBTagDeepJet_1p3_7p7_VBF1",
     ],
+    "SingleTau": [
+        "LooseDeepTauPFTauHPS180_L2NN_eta2p1",
+    ],
     "DiTau": [
         "HLT_DoubleMediumDeepTauPFTauHPS35_L2NN_eta2p1",
         "HLT_DoubleMediumDeepTauIsoPFTauHPS30_L2NN_eta2p1_PFJet60",
@@ -49,3 +52,9 @@ HLT_dict = {
 
 # combine into a single list
 HLT_list = [hlt for sublist in HLT_dict.values() for hlt in sublist]
+HLT_hh = [
+    hlt
+    for key in ["PNet", "PFJet", "QuadJet", "DiTau", "SingleTau"]
+    for sublist in HLT_dict[key]
+    for hlt in sublist
+]
