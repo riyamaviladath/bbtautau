@@ -56,3 +56,13 @@ HLT_taus = [hlt for key in ["DiTau", "SingleTau"] for hlt in HLT_dict[key]]
 HLT_hh = [
     hlt for key in ["PNet", "PFJet", "QuadJet", "DiTau", "SingleTau"] for hlt in HLT_dict[key]
 ]
+HLT_hmu = [
+    hlt
+    for key in ["PNet", "PFJet", "Muon", "MuonTau", "DiTau", "SingleTau"]
+    for hlt in HLT_dict[key]
+]
+HLT_he = [
+    hlt
+    for key in ["PNet", "PFJet", "EGamma", "ETau", "DiTau", "SingleTau"]
+    for hlt in HLT_dict[key]
+]
