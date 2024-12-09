@@ -223,7 +223,7 @@ class bbtautauSkimmer(SkimmerABC):
         self.jmsr_vars = ["msoftdrop", "particleNet_mass_legacy", "ParTmassVis", "ParTmassRes"]
 
         # particlenet legacy variables
-        pnet_vars = ["Xbb", "QCD", "QCDb", "QCDbb", "QCDothers", "mass"]
+        pnet_vars = ["Xbb", "QCD", "QCDb", "QCDbb", "QCDcc", "QCDc", "QCDothers", "mass"]
         self.skim_vars["FatJet"] = {
             **self.skim_vars["FatJet"],
             **{f"particleNetLegacy_{var}": f"PNet{var}Legacy" for var in pnet_vars},
