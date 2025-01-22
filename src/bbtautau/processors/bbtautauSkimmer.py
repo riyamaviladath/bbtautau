@@ -95,7 +95,8 @@ class bbtautauSkimmer(SkimmerABC):
     }
 
     fatjet_selection = {  # noqa: RUF012
-        "pt": 250,
+        "object_pt": 170,
+        "pt": 230,
         "eta": 2.5,
         "msd": 50,
         "mreg": 0,
@@ -142,29 +143,50 @@ class bbtautauSkimmer(SkimmerABC):
         HLTs = {
             "signal": {
                 "2022": [
-                    "AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
+                    # jets
                     "AK8PFJet425_SoftDropMass40",
+                    "AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
+                    "AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30",
+                    "QuadPFJet70_50_40_35_PFBTagParticleNet_2BTagSum0p65",
+                    # particlenetbb + lepton (monitoring paths?)
+                    # "IsoMu50_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetBB0p35",
+                    # "Ele50_CaloIdVT_GsfTrkIdT_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetBB0p35",
+                    # single-tau
+                    "LooseDeepTauPFTauHPS180_L2NN_eta2p1",
+                    # di-tau
+                    # "DoubleMediumDeepTauIsoPFTauHPS30_L2NN_eta2p1_PFJet60",  # monitoring path?
                     "DoubleMediumDeepTauPFTauHPS35_L2NN_eta2p1",
                     "DoubleMediumDeepTauPFTauHPS30_L2NN_eta2p1_PFJet60",
                     "DoubleMediumDeepTauPFTauHPS30_L2NN_eta2p1_PFJet75",
+                    # single-muon
                     "IsoMu24",
                     "Mu50",
+                    # mu-tau
                     "IsoMu20_eta2p1_LooseDeepTauPFTauHPS27_eta2p1_CrossL1",
                     "IsoMu24_eta2p1_LooseDeepTauPFTauHPS180_eta2p1",
                     "IsoMu24_eta2p1_LooseDeepTauPFTauHPS30_eta2p1_CrossL1",
-                    "IsoMu24_eta2p1_MediumDeepTauPFTauHPS35_L2NN_eta2p1_CrossL1",
                     "IsoMu24_eta2p1_MediumDeepTauPFTauHPS30_L2NN_eta2p1_CrossL1",
+                    "IsoMu24_eta2p1_MediumDeepTauPFTauHPS35_L2NN_eta2p1_CrossL1",
                     "IsoMu24_eta2p1_MediumDeepTauPFTauHPS45_L2NN_eta2p1_CrossL1",
                     "IsoMu20_eta2p1_TightChargedIsoPFTauHPS27_eta2p1_CrossL1",
                     "IsoMu20_eta2p1_TightChargedIsoPFTauHPS27_eta2p1_TightID_CrossL1",
                     "IsoMu24_eta2p1_MediumDeepTauPFTauHPS30_L2NN_eta2p1_PFJet60_CrossL1",
                     "IsoMu24_eta2p1_MediumDeepTauPFTauHPS30_L2NN_eta2p1_PFJet75_CrossL1",
+                    "IsoMu27_MediumDeepTauPFTauHPS20_eta2p1_SingleL1",  # can't find it in Nano!
+                    # single-electron (+ jet)
                     "Ele30_WPTight_Gsf",
                     "Ele115_CaloIdVT_GsfTrkIdT",
                     "Ele50_CaloIdVT_GsfTrkIdT_PFJet165",
                     "Photon200",
+                    # ele-tau
                     "Ele24_eta2p1_WPTight_Gsf_LooseDeepTauPFTauHPS30_eta2p1_CrossL1",
                     "Ele24_eta2p1_WPTight_Gsf_TightChargedIsoPFTauHPS30_eta2p1_CrossL1",
+                    # vbf
+                    "VBF_DoubleMediumDeepTauPFTauHPS20_eta2p1",
+                    # "DoublePFJets40_Mass500_MediumDeepTau45_L2NN_MediumDeepTau20_eta2p1",  # monitoring path?
+                    # "DoublePFJets40_Mass500_MediumDeepTauPFTauHPS45_L2NN_MediumDeepTauPFTauHPS20_eta2p1",  # Tau dataset
+                    "QuadPFJet103_88_75_15_DoublePFBTagDeepJet_1p3_7p7_VBF1",
+                    "QuadPFJet103_88_75_15_PFBTagDeepJet_1p3_VBF2",
                 ],
                 "2022EE": [
                     "AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
@@ -201,7 +223,7 @@ class bbtautauSkimmer(SkimmerABC):
         self.jmsr_vars = ["msoftdrop", "particleNet_mass_legacy", "ParTmassVis", "ParTmassRes"]
 
         # particlenet legacy variables
-        pnet_vars = ["Xbb", "QCD", "QCDb", "QCDbb", "QCDothers", "mass"]
+        pnet_vars = ["Xbb", "QCD", "QCDb", "QCDbb", "QCDcc", "QCDc", "QCDothers", "mass"]
         self.skim_vars["FatJet"] = {
             **self.skim_vars["FatJet"],
             **{f"particleNetLegacy_{var}": f"PNet{var}Legacy" for var in pnet_vars},
@@ -227,8 +249,10 @@ class bbtautauSkimmer(SkimmerABC):
             "Xtauhtaue",
             "Xtauhtauh",
             "Xtauhtaum",
-            # "massRes",
-            # "massVis",
+            "massResCorr",
+            "massVisCorr",
+            "massResApplied",
+            "massVisApplied",
         ]
 
         self.skim_vars["FatJet"] = {
@@ -288,7 +312,7 @@ class bbtautauSkimmer(SkimmerABC):
         # veto_electron_sel = veto_electrons(events.Electron)
 
         # AK4 Jets
-        num_jets = 4  # noqa: F841
+        num_ak4_jets = 4
         jets, jec_shifted_jetvars = JEC_loader.get_jec_jets(
             events,
             events.Jet,
@@ -314,6 +338,7 @@ class bbtautauSkimmer(SkimmerABC):
         print("ak4", f"{time.time() - start:.2f}")
 
         # AK8 Jets
+        num_ak8_jets = 3
         fatjets = objects.get_ak8jets(events.FatJet)  # this adds all our extra variables e.g. TXbb
         fatjets, jec_shifted_fatjetvars = JEC_loader.get_jec_jets(
             events,
@@ -330,7 +355,7 @@ class bbtautauSkimmer(SkimmerABC):
 
         fatjets = objects.good_ak8jets(fatjets, **self.fatjet_selection)
 
-        # # VBF objects
+        # # TODO: VBF objects
         # vbf_jets = objects.vbf_jets(
         #     jets,
         #     fatjets_xbb[:, :2],
@@ -379,18 +404,18 @@ class bbtautauSkimmer(SkimmerABC):
         )
         logging.info(f"Passing gen selection: {np.sum(gen_selected)} / {len(events)}")
 
-        # # AK4 Jet variables
-        # jet_skimvars = self.skim_vars["Jet"]
-        # if not isData:
-        #     jet_skimvars = {
-        #         **jet_skimvars,
-        #         "pt_gen": "MatchedGenJetPt",
-        #     }
+        # AK4 Jet variables
+        jet_skimvars = self.skim_vars["Jet"]
+        if not isData:
+            jet_skimvars = {
+                **jet_skimvars,
+                "pt_gen": "MatchedGenJetPt",
+            }
 
-        # ak4JetVars = {
-        #     f"ak4Jet{key}": pad_val(jets[var], num_jets, axis=1)
-        #     for (var, key) in jet_skimvars.items()
-        # }
+        ak4JetVars = {
+            f"ak4Jet{key}": pad_val(jets[var], num_ak4_jets, axis=1)
+            for (var, key) in jet_skimvars.items()
+        }
 
         # if len(ak4_jets_awayfromak8) == 2:
         #     ak4JetAwayVars = {
@@ -418,7 +443,7 @@ class bbtautauSkimmer(SkimmerABC):
             }
 
         ak8FatJetVars = {
-            f"ak8FatJet{key}": pad_val(fatjets[var], 3, axis=1)
+            f"ak8FatJet{key}": pad_val(fatjets[var], num_ak8_jets, axis=1)
             for (var, key) in fatjet_skimvars.items()
         }
         print("Jet vars", f"{time.time() - start:.2f}")
@@ -430,7 +455,7 @@ class bbtautauSkimmer(SkimmerABC):
         #         key = self.skim_vars["Jet"][var]
         #         for shift, vals in jec_shifted_jetvars[var].items():
         #             if shift != "":
-        #                 ak4JetVars[f"ak4Jet{key}_{shift}"] = pad_val(vals, num_jets, axis=1)
+        #                 ak4JetVars[f"ak4Jet{key}_{shift}"] = pad_val(vals, num_ak4_jets, axis=1)
 
         #     # FatJet JEC variables
         #     for var in ["pt"]:
@@ -502,6 +527,7 @@ class bbtautauSkimmer(SkimmerABC):
             **HLTVars,
             # **ak4JetAwayVars,
             **ak8FatJetVars,
+            **ak4JetVars,
             # **bbFatJetVars,
             # **trigObjFatJetVars,
             # **vbfJetVars,
@@ -552,8 +578,8 @@ class bbtautauSkimmer(SkimmerABC):
         # # >=2 AK8 jets passing selections
         # add_selection("ak8_numjets", (ak.num(fatjets) >= 2), *selection_args)
 
-        # >=1 AK8 jets with pT>250 GeV
-        cut_pt = np.sum(ak8FatJetVars["ak8FatJetPt"] >= 250, axis=1) >= 1
+        # >=1 AK8 jets with pT>230 GeV
+        cut_pt = np.sum(ak8FatJetVars["ak8FatJetPt"] >= self.fatjet_selection["pt"], axis=1) >= 1
         add_selection("ak8_pt", cut_pt, *selection_args)
 
         # # >=1 AK8 jets with mSD >= 40 GeV
