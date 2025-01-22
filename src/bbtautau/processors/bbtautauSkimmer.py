@@ -189,8 +189,50 @@ class bbtautauSkimmer(SkimmerABC):
                     "QuadPFJet103_88_75_15_PFBTagDeepJet_1p3_VBF2",
                 ],
                 "2022EE": [
-                    "AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
+                    # jets
                     "AK8PFJet425_SoftDropMass40",
+                    "AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
+                    "AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30",
+                    "QuadPFJet70_50_40_35_PFBTagParticleNet_2BTagSum0p65",
+                    # particlenetbb + lepton (monitoring paths?)
+                    # "IsoMu50_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetBB0p35",
+                    # "Ele50_CaloIdVT_GsfTrkIdT_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetBB0p35",
+                    # single-tau
+                    "LooseDeepTauPFTauHPS180_L2NN_eta2p1",
+                    # di-tau
+                    # "DoubleMediumDeepTauIsoPFTauHPS30_L2NN_eta2p1_PFJet60",  # monitoring path?
+                    "DoubleMediumDeepTauPFTauHPS35_L2NN_eta2p1",
+                    "DoubleMediumDeepTauPFTauHPS30_L2NN_eta2p1_PFJet60",
+                    "DoubleMediumDeepTauPFTauHPS30_L2NN_eta2p1_PFJet75",
+                    # single-muon
+                    "IsoMu24",
+                    "Mu50",
+                    # mu-tau
+                    "IsoMu20_eta2p1_LooseDeepTauPFTauHPS27_eta2p1_CrossL1",
+                    "IsoMu24_eta2p1_LooseDeepTauPFTauHPS180_eta2p1",
+                    "IsoMu24_eta2p1_LooseDeepTauPFTauHPS30_eta2p1_CrossL1",
+                    "IsoMu24_eta2p1_MediumDeepTauPFTauHPS30_L2NN_eta2p1_CrossL1",
+                    "IsoMu24_eta2p1_MediumDeepTauPFTauHPS35_L2NN_eta2p1_CrossL1",
+                    "IsoMu24_eta2p1_MediumDeepTauPFTauHPS45_L2NN_eta2p1_CrossL1",
+                    "IsoMu20_eta2p1_TightChargedIsoPFTauHPS27_eta2p1_CrossL1",
+                    "IsoMu20_eta2p1_TightChargedIsoPFTauHPS27_eta2p1_TightID_CrossL1",
+                    "IsoMu24_eta2p1_MediumDeepTauPFTauHPS30_L2NN_eta2p1_PFJet60_CrossL1",
+                    "IsoMu24_eta2p1_MediumDeepTauPFTauHPS30_L2NN_eta2p1_PFJet75_CrossL1",
+                    "IsoMu27_MediumDeepTauPFTauHPS20_eta2p1_SingleL1",  # can't find it in Nano!
+                    # single-electron (+ jet)
+                    "Ele30_WPTight_Gsf",
+                    "Ele115_CaloIdVT_GsfTrkIdT",
+                    "Ele50_CaloIdVT_GsfTrkIdT_PFJet165",
+                    "Photon200",
+                    # ele-tau
+                    "Ele24_eta2p1_WPTight_Gsf_LooseDeepTauPFTauHPS30_eta2p1_CrossL1",
+                    "Ele24_eta2p1_WPTight_Gsf_TightChargedIsoPFTauHPS30_eta2p1_CrossL1",
+                    # vbf
+                    "VBF_DoubleMediumDeepTauPFTauHPS20_eta2p1",
+                    # "DoublePFJets40_Mass500_MediumDeepTau45_L2NN_MediumDeepTau20_eta2p1",  # monitoring path?
+                    # "DoublePFJets40_Mass500_MediumDeepTauPFTauHPS45_L2NN_MediumDeepTauPFTauHPS20_eta2p1",  # Tau dataset
+                    "QuadPFJet103_88_75_15_DoublePFBTagDeepJet_1p3_7p7_VBF1",
+                    "QuadPFJet103_88_75_15_PFBTagDeepJet_1p3_VBF2",
                 ],
                 "2023": [
                     "AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",

@@ -182,6 +182,8 @@ src/HH4b/boosted/**/*.pkl
 **/*test.ipynb
 **/*.json
 
+!data/*.json
+
 running_jobs.txt
 
 .bashrc
