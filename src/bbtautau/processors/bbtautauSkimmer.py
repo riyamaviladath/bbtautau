@@ -134,6 +134,7 @@ class bbtautauSkimmer(SkimmerABC):
         save_systematics: bool = False,
         region: str = "signal",
         nano_version: str = "v12",
+        fatjet_pt_cut: float = None,
     ):
         super().__init__()
 
@@ -260,7 +261,13 @@ class bbtautauSkimmer(SkimmerABC):
             **{f"globalParT_{var}": f"ParT{var}" for var in glopart_vars},
         }
 
-        logger.info(f"Running skimmer with systematics {self._systematics}")
+        # update fatjet pT cut
+        if fatjet_pt_cut is not None:
+            self.fatjet_selection["pt"] = fatjet_pt_cut
+
+        logger.info(
+            f"Running skimmer with:\nsystematics {self._systematics}\nregion {self._region}\nfatjet pt cut {self.fatjet_selection['pt']}"
+        )
 
     @property
     def accumulator(self):
@@ -270,8 +277,7 @@ class bbtautauSkimmer(SkimmerABC):
         """Runs event processor for different types of jets"""
 
         start = time.time()
-        print("Starting")
-        print("# events", len(events))
+        logging.info(f"# events {len(events)}")
 
         year = events.metadata["dataset"].split("_")[0]
         dataset = "_".join(events.metadata["dataset"].split("_")[1:])
@@ -578,9 +584,12 @@ class bbtautauSkimmer(SkimmerABC):
         # # >=2 AK8 jets passing selections
         # add_selection("ak8_numjets", (ak.num(fatjets) >= 2), *selection_args)
 
-        # >=1 AK8 jets with pT>230 GeV
-        cut_pt = np.sum(ak8FatJetVars["ak8FatJetPt"] >= self.fatjet_selection["pt"], axis=1) >= 1
-        add_selection("ak8_pt", cut_pt, *selection_args)
+        # >=1 AK8 jets with pT cut (230 GeV by default)
+        if self.fatjet_selection["pt"] >= 0:  # if < 0, don't apply any fatjet selection
+            cut_pt = (
+                np.sum(ak8FatJetVars["ak8FatJetPt"] >= self.fatjet_selection["pt"], axis=1) >= 1
+            )
+            add_selection("ak8_pt", cut_pt, *selection_args)
 
         # # >=1 AK8 jets with mSD >= 40 GeV
         # cut_mass = np.sum(ak8FatJetVars["ak8FatJetMsd"] >= 40, axis=1) >= 1
@@ -641,6 +650,8 @@ class bbtautauSkimmer(SkimmerABC):
         dataframe = self.to_pandas(skimmed_events)
         fname = events.behavior["__events_factory__"]._partition_key.replace("/", "_") + ".parquet"
         self.dump_table(dataframe, fname)
+
+        logger.info(f"Cutflow:\n{cutflow}")
 
         print("Return ", f"{time.time() - start:.2f}")
         return {year: {dataset: {"totals": totals_dict, "cutflow": cutflow}}}
