@@ -240,10 +240,9 @@ class bbtautauSkimmer(SkimmerABC):
                     "AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30",
                     "AK8PFJet230_SoftDropMass40_PNetBB0p06",
                     "AK8PFJet230_SoftDropMass40",
-                    "AK8PFJet400_SoftDropMass40",
                     "AK8PFJet425_SoftDropMass40",
                     "AK8PFJet420_MassSD30",
-                    "HLT_QuadPFJet70_50_40_35_PNet2BTagMean0p65_v",
+                    "QuadPFJet70_50_40_35_PNet2BTagMean0p65",
                     # Single tau
                     "LooseDeepTauPFTauHPS180_L2NN_eta2p1",
                     # di-tau
@@ -277,7 +276,7 @@ class bbtautauSkimmer(SkimmerABC):
                     "QuadPFJet103_88_75_15_DoublePFBTagDeepJet_1p3_7p7_VBF1",
                     "QuadPFJet103_88_75_15_PFBTagDeepJet_1p3_VBF2",
                     # Parking
-                    "HLT_PFHT280_QuadPFJet30_PNet2BTagMean0p55",
+                    "PFHT280_QuadPFJet30_PNet2BTagMean0p55",
                 ],
                 "2023BPix": [
                     # Jets
@@ -285,10 +284,9 @@ class bbtautauSkimmer(SkimmerABC):
                     "AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30",
                     "AK8PFJet230_SoftDropMass40_PNetBB0p06",
                     "AK8PFJet230_SoftDropMass40",
-                    "AK8PFJet400_SoftDropMass40",
                     "AK8PFJet425_SoftDropMass40",
                     "AK8PFJet420_MassSD30",
-                    "HLT_QuadPFJet70_50_40_35_PNet2BTagMean0p65_v",
+                    "QuadPFJet70_50_40_35_PNet2BTagMean0p65",
                     # Single tau
                     "LooseDeepTauPFTauHPS180_L2NN_eta2p1",
                     # di-tau
@@ -322,7 +320,7 @@ class bbtautauSkimmer(SkimmerABC):
                     "QuadPFJet103_88_75_15_DoublePFBTagDeepJet_1p3_7p7_VBF1",
                     "QuadPFJet103_88_75_15_PFBTagDeepJet_1p3_VBF2",
                     # Parking
-                    "HLT_PFHT280_QuadPFJet30_PNet2BTagMean0p55",
+                    "PFHT280_QuadPFJet30_PNet2BTagMean0p55",
                 ],
             },
         }
