@@ -236,9 +236,12 @@ class bbtautauSkimmer(SkimmerABC):
                 ],
                 "2023": [
                     # Jets
+                    "AK8PFJet220_SoftDropMass40_PNetBB0p35_DoubleAK4PFJet60_30_PNet2BTagMean0p50",
+                    "AK8PFJet220_SoftDropMass40_PNetBB0p06_DoubleAK4PFJet60_30_PNet2BTagMean0p50",
                     "AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
                     "AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30",
                     "AK8PFJet230_SoftDropMass40_PNetBB0p06",
+                    "AK8PFJet230_SoftDropMass40_PNetTauTau0p03",
                     "AK8PFJet230_SoftDropMass40",
                     "AK8PFJet425_SoftDropMass40",
                     "AK8PFJet420_MassSD30",
@@ -277,12 +280,16 @@ class bbtautauSkimmer(SkimmerABC):
                     "QuadPFJet103_88_75_15_PFBTagDeepJet_1p3_VBF2",
                     # Parking
                     "PFHT280_QuadPFJet30_PNet2BTagMean0p55",
+                    "PFHT340_QuadPFJet70_50_40_40_PNet2BTagMean0p70",
                 ],
                 "2023BPix": [
                     # Jets
+                    "AK8PFJet220_SoftDropMass40_PNetBB0p35_DoubleAK4PFJet60_30_PNet2BTagMean0p50",
+                    "AK8PFJet220_SoftDropMass40_PNetBB0p06_DoubleAK4PFJet60_30_PNet2BTagMean0p50",
                     "AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
                     "AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30",
                     "AK8PFJet230_SoftDropMass40_PNetBB0p06",
+                    "AK8PFJet230_SoftDropMass40_PNetTauTau0p03",
                     "AK8PFJet230_SoftDropMass40",
                     "AK8PFJet425_SoftDropMass40",
                     "AK8PFJet420_MassSD30",
@@ -321,6 +328,7 @@ class bbtautauSkimmer(SkimmerABC):
                     "QuadPFJet103_88_75_15_PFBTagDeepJet_1p3_VBF2",
                     # Parking
                     "PFHT280_QuadPFJet30_PNet2BTagMean0p55",
+                    "PFHT340_QuadPFJet70_50_40_40_PNet2BTagMean0p70",
                 ],
             },
         }
