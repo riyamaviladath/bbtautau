@@ -1,0 +1,21 @@
+{
+  "2022":
+    {
+      "TT":
+        {
+          "files_per_job": 20,
+        },
+      "QCD":
+        {
+          "files_per_job": 20,
+        },
+      "VJets":
+        {
+          "files_per_job": 20,
+        },
+      "Hbb":
+        {
+          "files_per_job": 20,
+        },
+    },
+}
