@@ -5,7 +5,7 @@
         {
           "subsamples":
             [
-              "GluGlutoHHto2B2Tau_kl-1p00_kt-1p00_c2-0p00",
+              "GluGlutoHHto2B2Tau_kl-1p00_kt-1p00_c2-0p00_LHEweights",
               "VBFHHto2B2Tau_CV_1_C2V_0_C3_1",
               "VBFHHto2B2Tau_CV_1_C2V_1_C3_1",
             ],
