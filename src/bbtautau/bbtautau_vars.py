@@ -8,7 +8,7 @@ years = years_2022 + years_2023
 
 HLT_2022 = {
     "PNet": [
-        "HLT_AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
+        # "HLT_AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
         "HLT_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30",
     ],
     "PFJet": [
@@ -55,14 +55,14 @@ HLT_2022 = {
 
 HLT_2023 = {
     "PNet": [
-        "HLT_AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
+        # "HLT_AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
         "HLT_AK8PFJet230_SoftDropMass40_PNetBB0p06",
         "HLT_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30",
         "HLT_AK8PFJet230_SoftDropMass40_PNetTauTau0p03",
     ],
     "PFJet": ["HLT_AK8PFJet425_SoftDropMass40", "HLT_AK8PFJet420_MassSD30"],
     "QuadJet": [
-        "HLT_QuadPFJet70_50_40_35_PNet2BTagMean0p65",  # prob will be absent from MC
+        # "HLT_QuadPFJet70_50_40_35_PNet2BTagMean0p65",  #  absent from MC
         "HLT_QuadPFJet103_88_75_15_PFBTagDeepJet_1p3_VBF2",
         "HLT_QuadPFJet103_88_75_15_DoublePFBTagDeepJet_1p3_7p7_VBF1",
     ],
@@ -108,8 +108,7 @@ HLT_dict.update(dict.fromkeys(years_2023, HLT_2023))
 # combine into a single list
 HLT_list = {year: [hlt for sublist in HLT_dict[year].values() for hlt in sublist] for year in years}
 HLT_jets = {
-    year: [hlt for key in ["PNet", "PFJet", "QuadJet"] for hlt in HLT_dict[year][key]]
-    for year in years
+    year: [hlt for key in ["PNet", "PFJet"] for hlt in HLT_dict[year][key]] for year in years
 }
 HLT_taus = {
     year: [hlt for key in ["DiTau", "SingleTau"] for hlt in HLT_dict[year][key]] for year in years
@@ -138,5 +137,3 @@ HLT_he = {
     ]
     for year in years
 }
-
-HLT_map = {"hadronic": HLT_hh, "muon": HLT_hmu, "electron": HLT_he}
