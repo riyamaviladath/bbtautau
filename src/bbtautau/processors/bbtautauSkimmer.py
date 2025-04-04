@@ -245,7 +245,6 @@ class bbtautauSkimmer(SkimmerABC):
                     "AK8PFJet230_SoftDropMass40",
                     "AK8PFJet425_SoftDropMass40",
                     "AK8PFJet420_MassSD30",
-                    "QuadPFJet70_50_40_35_PNet2BTagMean0p65",
                     # Single tau
                     "LooseDeepTauPFTauHPS180_L2NN_eta2p1",
                     # di-tau
@@ -278,6 +277,7 @@ class bbtautauSkimmer(SkimmerABC):
                     # "DoublePFJets40_Mass500_MediumDeepTauPFTauHPS45_L2NN_MediumDeepTauPFTauHPS20_eta2p1",  # Tau dataset
                     "QuadPFJet103_88_75_15_DoublePFBTagDeepJet_1p3_7p7_VBF1",
                     "QuadPFJet103_88_75_15_PFBTagDeepJet_1p3_VBF2",
+                    "QuadPFJet70_50_40_35_PNet2BTagMean0p65",  # not there in MC
                     # Parking
                     "PFHT280_QuadPFJet30_PNet2BTagMean0p55",
                     "PFHT340_QuadPFJet70_50_40_40_PNet2BTagMean0p70",
@@ -293,7 +293,6 @@ class bbtautauSkimmer(SkimmerABC):
                     "AK8PFJet230_SoftDropMass40",
                     "AK8PFJet425_SoftDropMass40",
                     "AK8PFJet420_MassSD30",
-                    "QuadPFJet70_50_40_35_PNet2BTagMean0p65",
                     # Single tau
                     "LooseDeepTauPFTauHPS180_L2NN_eta2p1",
                     # di-tau
@@ -326,6 +325,7 @@ class bbtautauSkimmer(SkimmerABC):
                     # "DoublePFJets40_Mass500_MediumDeepTauPFTauHPS45_L2NN_MediumDeepTauPFTauHPS20_eta2p1",  # Tau dataset
                     "QuadPFJet103_88_75_15_DoublePFBTagDeepJet_1p3_7p7_VBF1",
                     "QuadPFJet103_88_75_15_PFBTagDeepJet_1p3_VBF2",
+                    "QuadPFJet70_50_40_35_PNet2BTagMean0p65",  # not there in MC
                     # Parking
                     "PFHT280_QuadPFJet30_PNet2BTagMean0p55",
                     "PFHT340_QuadPFJet70_50_40_40_PNet2BTagMean0p70",

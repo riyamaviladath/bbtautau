@@ -65,6 +65,25 @@ def good_ak8jets(
     return fatjets[fatjet_sel]
 
 
+"""
+Trigger quality bits in NanoAOD v12
+0 => CaloIdL_TrackIdL_IsoVL,
+1 => 1e (WPTight),
+2 => 1e (WPLoose),
+3 => OverlapFilter PFTau,
+4 => 2e,
+5 => 1e-1mu,
+6 => 1e-1tau,
+7 => 3e,
+8 => 2e-1mu,
+9 => 1e-2mu,
+10 => 1e (32_L1DoubleEG_AND_L1SingleEGOr),
+11 => 1e (CaloIdVT_GsfTrkIdT),
+12 => 1e (PFJet),
+13 => 1e (Photon175_OR_Photon200) for Electron;
+"""
+
+
 def good_electrons(events, electrons: ElectronArray):
     # from https://indico.cern.ch/event/1495537/contributions/6355656/attachments/3012754/5312393/2025.02.11_Run3HHbbtautau_CMSweek.pdf
     if events["HLT_Ele24_eta2p1_WPTight_Gsf_LooseDeepTauPFTauHPS30_eta2p1_CrossL1"]:
@@ -83,6 +102,24 @@ def good_electrons(events, electrons: ElectronArray):
     )
 
     return electrons[ele_sel]
+
+
+"""
+Trigger quality bits in NanoAOD v12
+0 => TrkIsoVVL,
+1 => Iso,
+2 => OverlapFilter PFTau,
+3 => 1mu,
+4 => 2mu,
+5 => 1mu-1e,
+6 => 1mu-1tau,
+7 => 3mu,
+8 => 2mu-1e,
+9 => 1mu-2e,
+10 => 1mu (Mu50),
+11 => 1mu (Mu100),
+12 => 1mu-1photon for Muon;
+"""
 
 
 def good_muons(events, muons: MuonArray):
@@ -105,11 +142,43 @@ def good_muons(events, muons: MuonArray):
     return muons[muon_sel]
 
 
+"""
+Trigger quality bits in NanoAOD v12
+0 => LooseChargedIso,
+1 => MediumChargedIso,
+2 => TightChargedIso,
+3 => DeepTau,
+4 => TightID OOSC photons,
+5 => HPS,
+6 => charged iso di-tau,
+7 => deeptau di-tau,
+8 => e-tau,
+9 => mu-tau,
+10 => single-tau/tau+MET,
+11 => run 2 VBF+ditau,
+12 => run 3 VBF+ditau,
+13 => run 3 double PF jets + ditau,
+14 => di-tau + PFJet,
+15 => Displaced Tau,
+16 => Monitoring,
+17 => regional paths,
+18 => L1 seeded paths,
+19 => 1 prong tau paths for Tau;
+"""
+
+
 def good_taus(events, taus: TauArray):  # noqa: ARG001
     # from https://indico.cern.ch/event/1495537/contributions/6355656/attachments/3012754/5312393/2025.02.11_Run3HHbbtautau_CMSweek.pdf
 
     tau_sel = (taus.pt > 32) & (abs(taus.eta) < 2.5) & (abs(taus.dz) < 0.2)
     return taus[tau_sel]
+
+
+"""
+Trigger quality bits in NanoAOD v12
+0 => HLT_AK8PFJetX_SoftDropMass40_PFAK8ParticleNetTauTau0p30,
+1 => hltAK8SinglePFJets230SoftDropMass40PNetTauTauTag0p03 for BoostedTau;
+"""
 
 
 def good_boostedtaus(events, taus: TauArray):  # noqa: ARG001
