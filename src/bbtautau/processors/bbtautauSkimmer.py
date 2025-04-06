@@ -544,8 +544,8 @@ class bbtautauSkimmer(SkimmerABC):
             axis=0,
         )
 
-        # apply trigger
-        apply_trigger = True
+        # don't apply triggers for now, for trigger studies etc.
+        apply_trigger = False
         if apply_trigger:
             add_selection("trigger", HLT_triggered, *selection_args)
 
@@ -628,6 +628,7 @@ class bbtautauSkimmer(SkimmerABC):
         self.dump_table(dataframe, fname)
 
         print("Return ", f"{time.time() - start:.2f}")
+        print("Columns:", print(list(dataframe.columns)))
         return {year: {dataset: {"totals": totals_dict, "cutflow": cutflow}}}
 
     def postprocess(self, accumulator):
