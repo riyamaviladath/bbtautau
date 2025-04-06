@@ -91,7 +91,7 @@ def gen_selection_HHbbtautau(
     taue = _sum_taus(ak.any(np.abs(tau_children.pdgId) == PDGID.e, axis=2))
 
     GenTauVars["GenTauhh"] = (tauh == 2).to_numpy()
-    GenTauVars["GenTauhmu"] = ((tauh == 1) & (taumu == 1)).to_numpy()
+    GenTauVars["GenTauhm"] = ((tauh == 1) & (taumu == 1)).to_numpy()
     GenTauVars["GenTauhe"] = ((tauh == 1) & (taue == 1)).to_numpy()
 
     # fatjet gen matching
