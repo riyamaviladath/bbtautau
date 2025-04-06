@@ -15,10 +15,10 @@
         {
           "files_per_job": 30,
         },
-      "QCD":
-        {
-          "files_per_job": 30,
-        },
+      # "QCD":
+      #   {
+      #     "files_per_job": 30,
+      #   },
       "VJets":
         {
           "files_per_job": 100,
