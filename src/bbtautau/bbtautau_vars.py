@@ -12,8 +12,8 @@ HLT_2022 = {
         "HLT_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30",
     ],
     "PFJet": [
-        "HLT_AK8PFJet425_SoftDropMass40",
         "HLT_AK8PFJet420_MassSD30",
+        "HLT_AK8PFJet425_SoftDropMass40",
     ],
     # TODO: do we need QuadJet?
     "QuadJet": [
@@ -26,12 +26,13 @@ HLT_2022 = {
     ],
     "DiTau": [
         "HLT_DoubleMediumDeepTauPFTauHPS35_L2NN_eta2p1",
-        # TODO: check sensitivity without below triggers
+        # VBF DiTau
+        # "HLT_VBF_DoubleMediumDeepTauPFTauHPS20_eta2p1",
+        # "HLT_DoublePFJets40_Mass500_MediumDeepTauPFTauHPS45_L2NN_MediumDeepTauPFTauHPS20_eta2p1",
+    ],
+    "DitauJet": [
         "HLT_DoubleMediumDeepTauPFTauHPS30_L2NN_eta2p1_PFJet60",
         "HLT_DoubleMediumDeepTauPFTauHPS30_L2NN_eta2p1_PFJet75",
-        # VBF DiTau
-        "HLT_VBF_DoubleMediumDeepTauPFTauHPS20_eta2p1",
-        "HLT_DoublePFJets40_Mass500_MediumDeepTauPFTauHPS45_L2NN_MediumDeepTauPFTauHPS20_eta2p1",
     ],
     "Muon": [
         "HLT_IsoMu24",
@@ -54,6 +55,9 @@ HLT_2022 = {
         "HLT_Ele24_eta2p1_WPTight_Gsf_LooseDeepTauPFTauHPS30_eta2p1_CrossL1",
         # "HLT_Ele24_eta2p1_WPTight_Gsf_TightChargedIsoPFTauHPS30_eta2p1_CrossL1",  # Not sure what this is
     ],
+    "MET": [
+        "HLT_PFMET120_PFMHT120_IDTight",
+    ],
 }
 
 HLT_2023 = {
@@ -64,8 +68,8 @@ HLT_2023 = {
         "HLT_AK8PFJet230_SoftDropMass40_PNetTauTau0p03",
     ],
     "PFJet": [
-        "HLT_AK8PFJet425_SoftDropMass40",
         "HLT_AK8PFJet420_MassSD30",
+        "HLT_AK8PFJet425_SoftDropMass40",
     ],
     # TODO: do we need QuadJet after removing Parking?
     "QuadJet": [
@@ -78,6 +82,8 @@ HLT_2023 = {
     ],
     "DiTau": [
         "HLT_DoubleMediumDeepTauPFTauHPS35_L2NN_eta2p1",
+    ],
+    "DitauJet": [
         "HLT_DoubleMediumDeepTauPFTauHPS30_L2NN_eta2p1_PFJet60",
         "HLT_DoubleMediumDeepTauPFTauHPS30_L2NN_eta2p1_PFJet75",
     ],
@@ -101,6 +107,9 @@ HLT_2023 = {
         "HLT_PFHT280_QuadPFJet30_PNet2BTagMean0p55",
         "HLT_PFHT340_QuadPFJet70_50_40_40_PNet2BTagMean0p70",
     ],
+    "MET": [
+        "HLT_PFMET120_PFMHT120_IDTight",
+    ],
 }
 
 HLT_dict = {}
@@ -117,7 +126,8 @@ HLT_jets = {
     for year in years
 }
 HLT_taus = {
-    year: [hlt for key in ["DiTau", "SingleTau"] for hlt in HLT_dict[year][key]] for year in years
+    year: [hlt for key in ["DiTau", "SingleTau", "DiTauJet"] for hlt in HLT_dict[year][key]]
+    for year in years
 }
 HLT_egammas = {
     year: [hlt for key in ["EGamma", "ETau"] for hlt in HLT_dict[year][key]] for year in years
