@@ -103,8 +103,9 @@ class Analyser:
         self.columns_signal = copy.deepcopy(self.columns_data)
         self.events_dict = {year: {} for year in years}
         for year in self.years:
-            for branch in ALL_TRIGGERS[self.channel][year]:
+            for branch in ALL_TRIGGERS[self.channel]["data"][year]:
                 self.columns_data[year].append((branch, 1))
+            for branch in ALL_TRIGGERS[self.channel]["MC"][year]:
                 self.columns_signal[year].append((branch, 1))
 
             for branch in [f"ak8FatJetParT{key}" for key in qcdouts + topouts + sigouts]:
@@ -174,19 +175,29 @@ class Analyser:
             # ("('ak8FatJetPNetXbb', '0')", ">=", 0.8),
         ]
         # check 'or' and 'and' syntax
-        filters = (
+        filters_data = (
             [
-                kin_filters + [(f"('{trigger}','0')", "==", 1)]
-                for trigger in (ALL_TRIGGERS[self.channel][year])
+                kin_filters + [(f"('{trigger}', '0')", "==", 1)]
+                for trigger in (ALL_TRIGGERS[self.channel]["data"][year])
             ]
             if tight_filter
             else [kin_filters]
         )
-        print(f"Filters: {filters}")
+        filters_MC = (
+            [
+                kin_filters + [(f"('{trigger}', '0')", "==", 1)]
+                for trigger in (ALL_TRIGGERS[self.channel]["MC"][year])
+            ]
+            if tight_filter
+            else [kin_filters]
+        )
+        # print(f"Filters: {filters}")
         # dictionary that will contain all information (from all samples)
 
         for key, sample in self.samples.items():
-            self.events_dict[year][key] = utils.load_sample(sample, filters)
+            self.events_dict[year][key] = utils.load_sample(
+                sample, filters_data if key != "bbtt" else filters_MC
+            )
 
         self.events_dict[year]["bbtthh"] = self.events_dict[year]["bbtt"][
             self.events_dict[year]["bbtt"]["GenTauhh"][0]
@@ -221,21 +232,21 @@ class Analyser:
             d["all"] = np.sum(
                 [
                     self.events_dict[year][key][hlt].iloc[:, 0]
-                    for hlt in ALL_TRIGGERS[self.channel][year]
+                    for hlt in ALL_TRIGGERS[self.channel]["data"][year]
                 ],
                 axis=0,
             ).astype(bool)
             d["jets"] = np.sum(
                 [
                     self.events_dict[year][key][hlt].iloc[:, 0]
-                    for hlt in bbtautau_vars.HLT_jets[year]
+                    for hlt in bbtautau_vars.HLT_jets["data"][year]
                 ],
                 axis=0,
             ).astype(bool)
             d["taus"] = np.sum(
                 [
                     self.events_dict[year][key][hlt].iloc[:, 0]
-                    for hlt in bbtautau_vars.HLT_taus[year]
+                    for hlt in bbtautau_vars.HLT_taus["data"][year]
                 ],
                 axis=0,
             ).astype(bool)
@@ -246,7 +257,7 @@ class Analyser:
                 d[self.lepton_dataset] = np.sum(
                     [
                         self.events_dict[year][key][hlt].iloc[:, 0]
-                        for hlt in LEPTON_TRIGGERS[self.channel][year]
+                        for hlt in LEPTON_TRIGGERS[self.channel]["data"][year]
                     ],
                     axis=0,
                 ).astype(bool)
@@ -264,10 +275,17 @@ class Analyser:
                 self.lepton_dataset
             ][trigdict[self.lepton_dataset][f"{self.lepton_dataset}noothers"]]
 
-    def delete_cols(self, year, triggers=True):
-        for skey in SIG_KEYS.values():
-            if triggers:
-                self.events_dict[year][skey].drop([list(ALL_TRIGGERS[self.channel][year])], axis=1)
+    def delete_cols(self, year):
+        # inefficient but works. could be cleaned
+        t_to_drop = list(ALL_TRIGGERS[self.channel]["data"][year])
+        for key in self.events_dict[year]:
+            for t in self.events_dict[year][key]:
+                if t in t_to_drop:
+                    self.events_dict[year][key].drop(t, axis=1)
+
+        # self.events_dict[year][key].drop(
+        # [list(ALL_TRIGGERS[self.channel]["MC" if key in SIG_KEYS.values() else "data"][year])], axis=1
+        # ) #somehow doesn't work
 
     def extract_year(self, year):
         self.load_events(year, tight_filter=True)
@@ -311,7 +329,7 @@ class Analyser:
                 fjbbpick = np.argmax(tvars["XbbvsQCD"], axis=1)
                 fjttpick = np.argmax(tvars[f"{self.taukey}vsQCD"], axis=1)
                 overlap = fjbbpick == fjttpick
-                fjbbpick[overlap] = np.argsort(tvars["XbbvsQCD"][overlap], axis=1)[:, -2]
+                fjbbpick[overlap] = np.argsort(tvars["XbbvsQCD"][overlap], axis=1)[:, 1]
 
                 # convert ids to boolean masks
                 fjbbpick_mask = np.zeros_like(tvars["XbbvsQCD"], dtype=bool)
@@ -406,7 +424,7 @@ class Analyser:
                 title=title + "+".join(years),
                 show=True,
                 plot_dir=self.plot_dir,
-                name=f"roc_{jet} {years}",
+                name=f"roc_{jet+'_'.join(years)}",
             )
 
     # here could block and save only data that needs after
@@ -672,7 +690,7 @@ class Analyser:
 
 if __name__ == "__main__":
 
-    years = ["2022"]  # , "2022EE", "2023", "2023BPix"]
+    years = ["2022", "2022EE", "2023", "2023BPix"]
 
     for c in [
         "electron",
@@ -694,7 +712,7 @@ if __name__ == "__main__":
         results = {}
         for B in [1, 2, 8]:
             yields_B, cuts_B, yields_max_significance, cuts_max_significance = analyser.sig_bkg_opt(
-                years, gridsize=15, B=B, plot=True
+                years, gridsize=30, B=B, plot=True
             )
             sig_yield, bkg_yield = yields_B
             sig_yield_max_sig, bkg_yield_max_sig = (
