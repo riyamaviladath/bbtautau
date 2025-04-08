@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
+import copy
+
 years_2022 = ["2022", "2022EE"]
 years_2023 = ["2023", "2023BPix"]
 years = years_2022 + years_2023
 
+cat = ["data", "MC"]
+
 HLT_2022 = {
     "PNet": [
-        # "HLT_AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
+        "HLT_AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
         "HLT_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30",
     ],
     "PFJet": [
@@ -55,14 +59,14 @@ HLT_2022 = {
 
 HLT_2023 = {
     "PNet": [
-        # "HLT_AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
+        "HLT_AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
         "HLT_AK8PFJet230_SoftDropMass40_PNetBB0p06",
         "HLT_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30",
         "HLT_AK8PFJet230_SoftDropMass40_PNetTauTau0p03",
     ],
     "PFJet": ["HLT_AK8PFJet425_SoftDropMass40", "HLT_AK8PFJet420_MassSD30"],
     "QuadJet": [
-        # "HLT_QuadPFJet70_50_40_35_PNet2BTagMean0p65",  #  absent from MC
+        "HLT_QuadPFJet70_50_40_35_PNet2BTagMean0p65",  # absent from 2023 MC and all bpix
         "HLT_QuadPFJet103_88_75_15_PFBTagDeepJet_1p3_VBF2",
         "HLT_QuadPFJet103_88_75_15_DoublePFBTagDeepJet_1p3_7p7_VBF1",
     ],
@@ -101,39 +105,91 @@ HLT_2023 = {
     ],
 }
 
-HLT_dict = {}
-HLT_dict.update(dict.fromkeys(years_2022, HLT_2022))
-HLT_dict.update(dict.fromkeys(years_2023, HLT_2023))
+HLT_dict = {c: {year: {} for year in years} for c in cat}
+for c in cat:
+    for y in years_2022:
+        HLT_dict[c][y] = copy.deepcopy(HLT_2022)
+    for y in years_2023:
+        HLT_dict[c][y] = copy.deepcopy(HLT_2023)
+
+# Manually remove some HLTs
+HLT_dict["data"]["2022"]["MuonTau"].remove(
+    "HLT_IsoMu20_eta2p1_TightChargedIsoPFTauHPS27_eta2p1_CrossL1"
+)
+HLT_dict["data"]["2022"]["ETau"].remove(
+    "HLT_Ele24_eta2p1_WPTight_Gsf_TightChargedIsoPFTauHPS30_eta2p1_CrossL1"
+)
+
+# HLT_dict["MC"]["2022"]["ETau"].remove("HLT_IsoMu27_MediumDeepTauPFTauHPS20_eta2p1_SingleL1") is in skimmer but not in file
+
+HLT_dict["data"]["2023"]["PNet"].remove("HLT_AK8PFJet230_SoftDropMass40_PNetBB0p06")
+HLT_dict["data"]["2023"]["PNet"].remove("HLT_AK8PFJet230_SoftDropMass40_PNetTauTau0p03")
+HLT_dict["data"]["2023"]["Parking"].remove("HLT_PFHT280_QuadPFJet30_PNet2BTagMean0p55")
+
+HLT_dict["MC"]["2023"]["PNet"].remove("HLT_AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35")
+HLT_dict["MC"]["2023"]["PNet"].remove("HLT_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30")
+HLT_dict["MC"]["2023"]["QuadJet"].remove("HLT_QuadPFJet70_50_40_35_PNet2BTagMean0p65")
+
+HLT_dict["data"]["2023BPix"]["PNet"].remove("HLT_AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35")
+HLT_dict["data"]["2023BPix"]["PNet"].remove(
+    "HLT_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30"
+)
+HLT_dict["data"]["2023BPix"]["QuadJet"].remove("HLT_QuadPFJet70_50_40_35_PNet2BTagMean0p65")
+
+HLT_dict["MC"]["2023BPix"]["PNet"].remove("HLT_AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35")
+HLT_dict["MC"]["2023BPix"]["PNet"].remove(
+    "HLT_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30"
+)
+HLT_dict["MC"]["2023BPix"]["QuadJet"].remove("HLT_QuadPFJet70_50_40_35_PNet2BTagMean0p65")
 
 # combine into a single list
-HLT_list = {year: [hlt for sublist in HLT_dict[year].values() for hlt in sublist] for year in years}
+HLT_list = {
+    c: {year: [hlt for sublist in HLT_dict[c][year].values() for hlt in sublist] for year in years}
+    for c in cat
+}
 HLT_jets = {
-    year: [hlt for key in ["PNet", "PFJet"] for hlt in HLT_dict[year][key]] for year in years
+    c: {
+        year: [hlt for key in ["PNet", "PFJet"] for hlt in HLT_dict[c][year][key]] for year in years
+    }
+    for c in cat
 }
 HLT_taus = {
-    year: [hlt for key in ["DiTau", "SingleTau"] for hlt in HLT_dict[year][key]] for year in years
+    c: {
+        year: [hlt for key in ["DiTau", "SingleTau"] for hlt in HLT_dict[c][year][key]]
+        for year in years
+    }
+    for c in cat
 }
 HLT_hh = {
-    year: [
-        hlt
-        for key in ["PNet", "PFJet", "QuadJet", "DiTau", "SingleTau"]
-        for hlt in HLT_dict[year][key]
-    ]
-    for year in years
+    c: {
+        year: [
+            hlt
+            for key in ["PNet", "PFJet", "QuadJet", "DiTau", "SingleTau"]
+            for hlt in HLT_dict[c][year][key]
+        ]
+        for year in years
+    }
+    for c in cat
 }
 HLT_hmu = {
-    year: [
-        hlt
-        for key in ["PNet", "PFJet", "Muon", "MuonTau", "DiTau", "SingleTau"]
-        for hlt in HLT_dict[year][key]
-    ]
-    for year in years
+    c: {
+        year: [
+            hlt
+            for key in ["PNet", "PFJet", "Muon", "MuonTau", "DiTau", "SingleTau"]
+            for hlt in HLT_dict[c][year][key]
+        ]
+        for year in years
+    }
+    for c in cat
 }
 HLT_he = {
-    year: [
-        hlt
-        for key in ["PNet", "PFJet", "EGamma", "ETau", "DiTau", "SingleTau"]
-        for hlt in HLT_dict[year][key]
-    ]
-    for year in years
+    c: {
+        year: [
+            hlt
+            for key in ["PNet", "PFJet", "EGamma", "ETau", "DiTau", "SingleTau"]
+            for hlt in HLT_dict[c][year][key]
+        ]
+        for year in years
+    }
+    for c in cat
 }
