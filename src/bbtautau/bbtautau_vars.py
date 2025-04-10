@@ -57,7 +57,6 @@ HLT_2022 = {
     # This is in EGamma
     "ETau": [
         "HLT_Ele24_eta2p1_WPTight_Gsf_LooseDeepTauPFTauHPS30_eta2p1_CrossL1",
-        # "HLT_Ele24_eta2p1_WPTight_Gsf_TightChargedIsoPFTauHPS30_eta2p1_CrossL1",  # Not sure what this is
     ],
     "MET": [
         "HLT_PFMET120_PFMHT120_IDTight",
@@ -124,13 +123,6 @@ for c in cat:
         HLT_dict[c][y] = copy.deepcopy(HLT_2023)
 
 # Manually remove some HLTs
-HLT_dict["data"]["2022"]["MuonTau"].remove(
-    "HLT_IsoMu20_eta2p1_TightChargedIsoPFTauHPS27_eta2p1_CrossL1"
-)
-HLT_dict["data"]["2022"]["ETau"].remove(
-    "HLT_Ele24_eta2p1_WPTight_Gsf_TightChargedIsoPFTauHPS30_eta2p1_CrossL1"
-)
-
 # HLT_dict["MC"]["2022"]["ETau"].remove("HLT_IsoMu27_MediumDeepTauPFTauHPS20_eta2p1_SingleL1") is in skimmer but not in file
 
 HLT_dict["data"]["2023"]["PNet"].remove("HLT_AK8PFJet230_SoftDropMass40_PNetBB0p06")
@@ -160,13 +152,16 @@ HLT_list = {
 }
 HLT_jets = {
     c: {
-        year: [hlt for key in ["PNet", "PFJet","QuadJet"] for hlt in HLT_dict[c][year][key]] for year in years
+        year: [hlt for key in ["PNet", "PFJet", "QuadJet"] for hlt in HLT_dict[c][year][key]]
+        for year in years
     }
     for c in cat
-    
 }
 HLT_taus = {
-    year: [hlt for key in ["DiTau", "SingleTau","DiTauJet"] for hlt in HLT_dict[year][key]] for year in years
+    c: {
+        year: [hlt for key in ["DiTau", "SingleTau", "DitauJet"] for hlt in HLT_dict[c][year][key]]
+        for year in years
+    }
 }
 HLT_hh = {
     c: {
