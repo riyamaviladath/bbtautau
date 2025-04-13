@@ -131,3 +131,16 @@ BGS = [
     "zjets",
     "hbb",
 ]
+
+qcdouts = ["QCD0HF", "QCD1HF", "QCD2HF"]
+topouts = ["TopW", "TopbW", "TopbWev", "TopbWmv", "TopbWtauhv", "TopbWq", "TopbWqq"][:2]
+sigouts = ["Xtauhtauh", "Xtauhtaue", "Xtauhtaum", "Xbb"]
+
+
+def get_stype(key: str) -> str:
+    if SAMPLES[key].isData:
+        return "data"
+    elif SAMPLES[key].isSignal:
+        return "signal"
+    else:
+        return "bg"

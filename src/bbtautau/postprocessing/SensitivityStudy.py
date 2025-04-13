@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 import logging
 from pathlib import Path
 
@@ -8,12 +7,12 @@ import matplotlib.pyplot as plt
 import mplhep as hep
 import numpy as np
 import pandas as pd
-from boostedhh import hh_vars, plotting, utils
+import postprocessing
+from boostedhh import hh_vars, plotting
 from boostedhh.utils import PAD_VAL
 from matplotlib.lines import Line2D
+from Samples import CHANNELS, qcdouts, topouts
 from sklearn.metrics import roc_curve
-
-from bbtautau import bbtautau_vars
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("boostedhh.utils")
@@ -22,260 +21,87 @@ logger.setLevel(logging.DEBUG)
 plt.style.use(hep.style.CMS)
 hep.style.use("CMS")
 
-# parser = argparse.ArgumentParser()
-# parser.add_argument("--channel", type=str, required=True) # "hadronic", "electron", "muon"
-# parser.add_argument("--years", type=str, nargs="+", required=True)#"2023", "2023BPix", "2022","2022EE",
-# args = parser.parse_args()
-
-# CHANNEL = args.channel
-# years = args.years
-
 # Global variables
 MAIN_DIR = Path("/home/users/lumori/bbtautau/")
-SIG_KEYS = {"hadronic": "bbtthh", "electron": "bbtthe", "muon": "bbtthmu"}
-ALL_TRIGGERS = {
-    "hadronic": bbtautau_vars.HLT_hh,
-    "muon": bbtautau_vars.HLT_hmu,
-    "electron": bbtautau_vars.HLT_he,
-}
-LEPTON_TRIGGERS = {
-    "hadronic": None,
-    "electron": bbtautau_vars.HLT_he,
-    "muon": bbtautau_vars.HLT_hmu,
-}
+SIG_KEYS = {"hh": "bbtthh", "he": "bbtthe", "hm": "bbtthm"}  # We should get rid of this
 
-tags = {
-    "data": {
-        "2022": "24Nov21ParTMass_v12_private_signal",
-        "2022EE": "25Jan22AddYears_v12_private_signal",
-        "2023": "25Mar7Signal_v12_private_signal",
-        "2023BPix": "25Mar7Signal_v12_private_signal",
+data_paths = {
+    "2022": {
+        "data": Path(
+            "/ceph/cms/store/user/rkansal/bbtautau/skimmer/24Nov21ParTMass_v12_private_signal/"
+        ),
+        "signal": Path(
+            "/ceph/cms/store/user/rkansal/bbtautau/skimmer/24Nov21ParTMass_v12_private_signal/"
+        ),
     },
-    "signal": {
-        "2022": "24Nov21ParTMass_v12_private_signal",
-        "2022EE": "25Jan22AddYears_v12_private_signal",
-        "2023": "25Mar7Signal_v12_private_signal",
-        "2023BPix": "25Mar7Signal_v12_private_signal",
+    "2022EE": {
+        "data": Path(
+            "/ceph/cms/store/user/rkansal/bbtautau/skimmer/25Jan22AddYears_v12_private_signal/"
+        ),
+        "signal": Path(
+            "/ceph/cms/store/user/rkansal/bbtautau/skimmer/25Jan22AddYears_v12_private_signal/"
+        ),
+    },
+    "2023": {
+        "data": Path(
+            "/ceph/cms/store/user/lumori/bbtautau/skimmer/25Mar7Signal_v12_private_signal/"
+        ),
+        "signal": Path(
+            "/ceph/cms/store/user/lumori/bbtautau/skimmer/25Mar7Signal_v12_private_signal/"
+        ),
+    },
+    "2023BPix": {
+        "data": Path(
+            "/ceph/cms/store/user/lumori/bbtautau/skimmer/25Mar7Signal_v12_private_signal/"
+        ),
+        "signal": Path(
+            "/ceph/cms/store/user/lumori/bbtautau/skimmer/25Mar7Signal_v12_private_signal/"
+        ),
     },
 }
-
-base_dir = {
-    "2022": Path("/ceph/cms/store/user/rkansal/bbtautau/skimmer/"),
-    "2022EE": Path("/ceph/cms/store/user/rkansal/bbtautau/skimmer/"),
-    "2023": Path("/ceph/cms/store/user/lumori/bbtautau/skimmer/"),
-    "2023BPix": Path("/ceph/cms/store/user/lumori/bbtautau/skimmer/"),
-}
-
-
-qcdouts = ["QCD0HF", "QCD1HF", "QCD2HF"]
-topouts = ["TopW", "TopbW", "TopbWev", "TopbWmv", "TopbWtauhv", "TopbWq", "TopbWqq"][:2]
-sigouts = ["Xtauhtauh", "Xtauhtaue", "Xtauhtaum", "Xbb"]
 
 
 class Analyser:
-    def __init__(self, years, channel):
-        self.channel = channel
+    def __init__(self, years, channel_key, test_mode=False):
+        self.channel = CHANNELS[channel_key]
         self.years = years
-        self.plot_dir = MAIN_DIR / f"plots/SensitivityStudy/25Mar7{channel}"
+        self.test_mode = test_mode
+        self.plot_dir = MAIN_DIR / f"plots/SensitivityStudy/25Mar7{channel_key}"
         self.plot_dir.mkdir(parents=True, exist_ok=True)
-        self.sig_key = SIG_KEYS[channel]
-        self.data_keys = {
-            "hadronic": ["jetmet", "tau"],
-            "electron": ["jetmet", "tau", "egamma"],
-            "muon": ["jetmet", "tau", "muon"],
-        }[channel]
-        self.taukey = {"hadronic": "Xtauhtauh", "electron": "Xtauhtaue", "muon": "Xtauhtaum"}[
-            channel
-        ]
-        self.lepton_dataset = {"hadronic": None, "electron": "egamma", "muon": "muon"}[channel]
-        self.columns_data = {
-            year: [
-                ("weight", 1),
-                ("ak8FatJetPt", 3),
-                ("ak8FatJetPNetXbbLegacy", 3),
-                ("ak8FatJetPNetQCDLegacy", 3),
-                ("ak8FatJetPNetmassLegacy", 3),
-                ("ak8FatJetParTmassResApplied", 3),
-                ("ak8FatJetParTmassVisApplied", 3),
-            ]
-            for year in years
-        }
-        self.columns_signal = copy.deepcopy(self.columns_data)
+
+        # we should get rid of these two lines
+        self.sig_key = SIG_KEYS[channel_key]
+        self.taukey = {"hh": "Xtauhtauh", "he": "Xtauhtaue", "hm": "Xtauhtaum"}[channel_key]
+
         self.events_dict = {year: {} for year in years}
-        for year in self.years:
-            for branch in ALL_TRIGGERS[self.channel][year]:
-                self.columns_data[year].append((branch, 1))
-                self.columns_signal[year].append((branch, 1))
 
-            for branch in [f"ak8FatJetParT{key}" for key in qcdouts + topouts + sigouts]:
-                self.columns_data[year].append((branch, 3))
-                self.columns_signal[year].append((branch, 3))
+    def load_year(self, year):
 
-            self.columns_signal[year] += [
-                ("GenTauhh", 1),
-                ("GenTauhmu", 1),
-                ("GenTauhe", 1),
-            ]
+        filters_dic = postprocessing.trigger_filter(
+            self.channel.triggers, fast_mode=self.test_mode
+        )  # = {"data": [(...)], "signal": [(...)], ...}
+        columns = postprocessing.get_columns(year, self.channel)
 
-    def load_events(self, year, tight_filter=False):
-        # define samples to load
-        self.samples = {
-            "jetmet": utils.Sample(
-                path=base_dir[year] / tags["data"][year],
-                selector="JetHT|JetMET",
-                label="JetMET",
-                isData=True,
-                year=year,
-                load_columns=utils.format_columns(self.columns_data[year]),
-            ),
-            "tau": utils.Sample(
-                path=base_dir[year] / tags["data"][year],
-                selector="Tau_Run",
-                label="Tau",
-                isData=True,
-                year=year,
-                load_columns=utils.format_columns(self.columns_data[year]),
-            ),
-            "muon": utils.Sample(
-                path=base_dir[year] / tags["data"][year],
-                selector="Muon_Run",
-                label="Muon",
-                isData=True,
-                year=year,
-                load_columns=utils.format_columns(self.columns_data[year]),
-            ),
-            "egamma": utils.Sample(
-                path=base_dir[year] / tags["data"][year],
-                selector="EGamma_Run",
-                label="EGamma",
-                isData=True,
-                year=year,
-                load_columns=utils.format_columns(self.columns_data[year]),
-            ),
-            "bbtt": utils.Sample(
-                path=base_dir[year] / tags["signal"][year],
-                selector=hh_vars.bbtt_sigs["bbtt"][year],
-                label=r"HHbb$\tau\tau$",
-                isData=False,
-                year=year,
-                load_columns=utils.format_columns(self.columns_signal[year]),
-            ),
-        }
-        for key in ["jetmet", "tau", "egamma", "muon"]:
-            if key not in self.data_keys:
-                del self.samples[key]
-
-        kin_filters = [
-            ("('ak8FatJetPt', '0')", ">=", 250),  # 250
-            ("('ak8FatJetPNetmassLegacy', '0')", ">=", 50),
-            ("('ak8FatJetPt', '1')", ">=", 200),
-            # ("('ak8FatJetMsd', '0')", ">=", msd_cut),
-            # ("('ak8FatJetMsd', '1')", ">=", msd_cut),
-            # ("('ak8FatJetPNetXbb', '0')", ">=", 0.8),
-        ]
-        # check 'or' and 'and' syntax
-        filters = (
-            [
-                kin_filters + [(f"('{trigger}','0')", "==", 1)]
-                for trigger in (ALL_TRIGGERS[self.channel][year])
-            ]
-            if tight_filter
-            else [kin_filters]
+        self.events_dict[year] = postprocessing.load_samples(
+            year,
+            self.channel,
+            data_paths[year],
+            filters_dic=filters_dic,
+            load_columns=columns,
+            load_just_bbtt=True,
         )
-        print(f"Filters: {filters}")
-        # dictionary that will contain all information (from all samples)
-
-        for key, sample in self.samples.items():
-            self.events_dict[year][key] = utils.load_sample(sample, filters)
-
-        self.events_dict[year]["bbtthh"] = self.events_dict[year]["bbtt"][
-            self.events_dict[year]["bbtt"]["GenTauhh"][0]
-        ]
-        self.events_dict[year]["bbtthmu"] = self.events_dict[year]["bbtt"][
-            self.events_dict[year]["bbtt"]["GenTauhmu"][0]
-        ]
-        self.events_dict[year]["bbtthe"] = self.events_dict[year]["bbtt"][
-            self.events_dict[year]["bbtt"]["GenTauhe"][0]
-        ]
-        del self.events_dict[year]["bbtt"]
-
-        if (
-            not tight_filter
-        ):  # backup for testing, would eventually remove; need to apply trigger filters
-            for skey in SIG_KEYS.values():
-                triggered = np.sum(
-                    [
-                        self.events_dict[year][skey][hlt].iloc[:, 0]
-                        for hlt in ALL_TRIGGERS[self.channel][year]
-                    ],
-                    axis=0,
-                ).astype(bool)
-                self.events_dict[year][skey] = self.events_dict[year][skey][triggered]
-
-    def remove_duplicates(self, year):
-        trigdict = {"jetmet": {}, "tau": {}}
-        if self.lepton_dataset:
-            trigdict[self.lepton_dataset] = {}
-
-        for key, d in trigdict.items():
-            d["all"] = np.sum(
-                [
-                    self.events_dict[year][key][hlt].iloc[:, 0]
-                    for hlt in ALL_TRIGGERS[self.channel][year]
-                ],
-                axis=0,
-            ).astype(bool)
-            d["jets"] = np.sum(
-                [
-                    self.events_dict[year][key][hlt].iloc[:, 0]
-                    for hlt in bbtautau_vars.HLT_jets[year]
-                ],
-                axis=0,
-            ).astype(bool)
-            d["taus"] = np.sum(
-                [
-                    self.events_dict[year][key][hlt].iloc[:, 0]
-                    for hlt in bbtautau_vars.HLT_taus[year]
-                ],
-                axis=0,
-            ).astype(bool)
-
-            d["taunojets"] = ~d["jets"] & d["taus"]
-
-            if self.lepton_dataset:
-                d[self.lepton_dataset] = np.sum(
-                    [
-                        self.events_dict[year][key][hlt].iloc[:, 0]
-                        for hlt in LEPTON_TRIGGERS[self.channel][year]
-                    ],
-                    axis=0,
-                ).astype(bool)
-
-                d[f"{self.lepton_dataset}noothers"] = (
-                    ~d["jets"] & ~d["taus"] & d[self.lepton_dataset]
-                )
-
-        self.events_dict[year]["jetmet"] = self.events_dict[year]["jetmet"][
-            trigdict["jetmet"]["jets"]
-        ]
-        self.events_dict[year]["tau"] = self.events_dict[year]["tau"][trigdict["tau"]["taunojets"]]
-        if self.lepton_dataset:
-            self.events_dict[year][self.lepton_dataset] = self.events_dict[year][
-                self.lepton_dataset
-            ][trigdict[self.lepton_dataset][f"{self.lepton_dataset}noothers"]]
-
-    def delete_cols(self, year, triggers=True):
-        for skey in SIG_KEYS.values():
-            if triggers:
-                self.events_dict[year][skey].drop([list(ALL_TRIGGERS[self.channel][year])], axis=1)
-
-    def extract_year(self, year):
-        self.load_events(year, tight_filter=True)
-        self.remove_duplicates(year)
-        self.delete_cols(year)
-        print("done with year ", year)
+        self.events_dict[year] = postprocessing.apply_triggers(
+            self.events_dict[year], year, self.channel
+        )
+        self.events_dict[year] = postprocessing.delete_columns(
+            self.events_dict[year], year, self.channel
+        )
+        return
 
     def build_tagger_dict(self):
+
+        # print(self.events_dict)
+
         self.taggers_dict = {year: {} for year in self.years}
         for year in self.years:
             for key, events in self.events_dict[year].items():
@@ -311,7 +137,7 @@ class Analyser:
                 fjbbpick = np.argmax(tvars["XbbvsQCD"], axis=1)
                 fjttpick = np.argmax(tvars[f"{self.taukey}vsQCD"], axis=1)
                 overlap = fjbbpick == fjttpick
-                fjbbpick[overlap] = np.argsort(tvars["XbbvsQCD"][overlap], axis=1)[:, -2]
+                fjbbpick[overlap] = np.argsort(tvars["XbbvsQCD"][overlap], axis=1)[:, 1]
 
                 # convert ids to boolean masks
                 fjbbpick_mask = np.zeros_like(tvars["XbbvsQCD"], dtype=bool)
@@ -354,14 +180,14 @@ class Analyser:
                             self.taggers_dict[year][key][disc],
                             self.taggers_dict[year][key][f"{jet}_mask"],
                         )
-                        for key in self.data_keys
+                        for key in self.channel.data_samples
                         for year in years
                     ]
                 )
                 bg_weights = np.concatenate(
                     [
                         self.events_dict[year][key]["finalWeight"]
-                        for key in self.data_keys
+                        for key in self.channel.data_samples
                         for year in years
                     ]
                 )
@@ -398,15 +224,13 @@ class Analyser:
     def plot_rocs(self, years):
         if not hasattr(self, "rocs") or "_".join(years) not in self.rocs:
             print(f"No ROC curves computed yet in years {years}")
-        for jet, title in zip(
-            ["bb", "tautau"], ["bb FatJet", rf"$\tau_h\tau_{self.channel[0]}$ FatJet"]
-        ):
+        for jet, title in zip(["bb", "tautau"], ["bb FatJet", rf"{self.channel.label}$ FatJet"]):
             plotting.multiROCCurveGrey(
                 {"": self.rocs["_".join(years)][jet]},
                 title=title + "+".join(years),
                 show=True,
                 plot_dir=self.plot_dir,
-                name=f"roc_{jet} {years}",
+                name=f"roc_{jet+'_'.join(years)}",
             )
 
     # here could block and save only data that needs after
@@ -426,7 +250,7 @@ class Analyser:
 
         # precompute to speedup
         for year in years:
-            for key in [self.sig_key] + self.data_keys:
+            for key in [self.sig_key] + self.channel.data_samples:
                 self.txbbs[year][key] = self.get_jet_vals(
                     self.taggers_dict[year][key]["XbbvsQCD"],
                     self.taggers_dict[year][key]["bb_mask"],
@@ -452,7 +276,7 @@ class Analyser:
         bg_yield = 0
         sig_yield = 0
         for year in years:
-            for key in [self.sig_key] + self.data_keys:
+            for key in [self.sig_key] + self.channel.data_samples:
                 if key == self.sig_key:
                     cut = (
                         (self.txbbs[year][key] > txbbcut)
@@ -672,18 +496,18 @@ class Analyser:
 
 if __name__ == "__main__":
 
-    years = ["2022"]  # , "2022EE", "2023", "2023BPix"]
+    years = ["2022"]  # "2022", "2022EE", "2023", "2023BPix"]
+    test_mode = False  # reduces size of data to run all quickly
 
     for c in [
-        "electron",
-        "hadronic",
-        "muon",
+        "hh",
+        "hm",
+        "he",
     ]:
         print(f"Channel: {c}")
         analyser = Analyser(years, c)
         for year in years:
-            analyser.extract_year(year)
-            print(f"Loaded {year} events")
+            analyser.load_year(year)
 
         analyser.build_tagger_dict()
         analyser.compute_rocs(years)
@@ -694,7 +518,7 @@ if __name__ == "__main__":
         results = {}
         for B in [1, 2, 8]:
             yields_B, cuts_B, yields_max_significance, cuts_max_significance = analyser.sig_bkg_opt(
-                years, gridsize=15, B=B, plot=True
+                years, gridsize=30, B=B, plot=True
             )
             sig_yield, bkg_yield = yields_B
             sig_yield_max_sig, bkg_yield_max_sig = (
@@ -706,5 +530,7 @@ if __name__ == "__main__":
         results_df = pd.concat(results, axis=0)
         results_df.index = results_df.index.droplevel(1)
         print(c, "\n", results_df.T.to_markdown())
-        results_df.T.to_csv(analyser.plot_dir / f"{'_'.join(years)}-results_fast.csv")
+        results_df.T.to_csv(
+            analyser.plot_dir / f"{'_'.join(years)}-results{'_fast' * test_mode}.csv"
+        )
         del analyser
