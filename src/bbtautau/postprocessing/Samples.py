@@ -3,32 +3,28 @@ from __future__ import annotations
 from boostedhh import hh_vars
 from boostedhh.utils import Channel, Sample
 
-from bbtautau import bbtautau_vars
-
 CHANNELS = {
     "hh": Channel(
         key="hh",
         label=r"$\tau_h\tau_h$",
-        triggers=bbtautau_vars.HLT_hh,
+        hlt_types=["PNet", "PFJet", "QuadJet", "DiTau", "DitauJet", "SingleTau"],
         data_samples=["jetmet", "tau"],
         isLepton=False,
     ),
     "he": Channel(
         key="he",
         label=r"$\tau_h e$",
-        triggers=bbtautau_vars.HLT_he,
+        hlt_types=["PNet", "PFJet", "EGamma", "ETau", "DiTau", "DitauJet", "SingleTau"],
         data_samples=["jetmet", "tau", "egamma"],
         lepton_dataset="egamma",
-        lepton_triggers=bbtautau_vars.HLT_egammas,
         isLepton=True,
     ),
     "hm": Channel(
         key="hm",
         label=r"$\tau_h \mu$",
-        triggers=bbtautau_vars.HLT_hmu,
+        hlt_types=["PNet", "PFJet", "Muon", "MuonTau", "DiTau", "DitauJet", "SingleTau"],
         data_samples=["jetmet", "tau", "muon"],
         lepton_dataset="muon",
-        lepton_triggers=bbtautau_vars.HLT_muons,
         isLepton=True,
     ),
 }

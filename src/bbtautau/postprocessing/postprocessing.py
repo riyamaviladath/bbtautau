@@ -8,7 +8,7 @@ import Samples
 from boostedhh import utils
 from boostedhh.utils import Channel
 
-from bbtautau import bbtautau_vars
+from bbtautau import HLTs
 
 base_filters = [
     ("('ak8FatJetPt', '0')", ">=", 250),
@@ -154,10 +154,10 @@ def remove_overlap(events_dict: dict[str, pd.DataFrame], year: str, channel: Cha
         )
 
     jet_triggers = utils.list_intersection(
-        bbtautau_vars.HLT_jets["data"][year], channel.triggers["data"][year]
+        HLTs.HLT_jets["data"][year], channel.triggers["data"][year]
     )
     tau_triggers = utils.list_intersection(
-        bbtautau_vars.HLT_taus["data"][year], channel.triggers["data"][year]
+        HLTs.HLT_taus["data"][year], channel.triggers["data"][year]
     )
 
     for key, d in trigdict.items():
