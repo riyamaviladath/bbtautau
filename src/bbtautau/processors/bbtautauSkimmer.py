@@ -143,7 +143,7 @@ class bbtautauSkimmer(SkimmerABC):
         xsecs: dict = None,
         save_systematics: bool = False,
         region: str = "signal",
-        nano_version: str = "v12",
+        nano_version: str = "v12_private",
     ):
         super().__init__()
 
