@@ -143,7 +143,7 @@ class bbtautauSkimmer(SkimmerABC):
         xsecs: dict = None,
         save_systematics: bool = False,
         region: str = "signal",
-        nano_version: str = "v12",
+        nano_version: str = "v12_private",
     ):
         super().__init__()
 
@@ -294,7 +294,7 @@ class bbtautauSkimmer(SkimmerABC):
 
         print("ak4 JECs", f"{time.time() - start:.2f}")
 
-        jets = objects.good_ak4jets(jets)
+        jets = objects.good_ak4jets(jets, nano_version=self._nano_version)
         ht = ak.sum(jets.pt, axis=1)
         print("ak4", f"{time.time() - start:.2f}")
 
@@ -314,7 +314,9 @@ class bbtautauSkimmer(SkimmerABC):
         )
         print("ak8 JECs", f"{time.time() - start:.2f}")
 
-        fatjets = objects.good_ak8jets(fatjets, **self.fatjet_selection)
+        fatjets = objects.good_ak8jets(
+            fatjets, **self.fatjet_selection, nano_version=self._nano_version
+        )
 
         # # TODO: VBF objects
         # vbf_jets = objects.vbf_jets(

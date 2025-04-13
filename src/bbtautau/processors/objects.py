@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import awkward as ak
 import numpy as np
+from boostedhh.processors.objects import jetid_v12
 from boostedhh.processors.utils import PDGID
 from coffea.nanoevents.methods.nanoaod import (
     ElectronArray,
@@ -86,10 +87,16 @@ def good_ak8jets(
     eta: float,
     msd: float,  # noqa: ARG001
     mreg: float,  # noqa: ARG001
-    mreg_str="particleNet_mass_legacy",  # noqa: ARG001
+    nano_version: str,
+    mreg_str: str = "particleNet_mass_legacy",  # noqa: ARG001
 ):
+    if nano_version.startswith("v12"):
+        jetidtight, jetidtightlepveto = jetid_v12(fatjets)  # v12 jetid fix
+    else:
+        raise NotImplementedError(f"Jet ID fix not implemented yet for {nano_version}")
+
     fatjet_sel = (
-        fatjets.isTight
+        jetidtight
         & (fatjets.pt > object_pt)
         & (abs(fatjets.eta) < eta)
         # & ((fatjets.msoftdrop > msd) | (fatjets[mreg_str] > mreg))
@@ -97,24 +104,11 @@ def good_ak8jets(
     return fatjets[fatjet_sel]
 
 
-def good_ak4jets(jets: JetArray):
-    # JetID definitions for nanov12 copying
-    # https://gitlab.cern.ch/cms-jetmet/coordination/coordination/-/issues/117#note_8880716
-    jetidtightbit = (jets.jetId & 2) == 2
-    jetidtight = (
-        ((np.abs(jets.eta) <= 2.7) & jetidtightbit)
-        | (
-            ((np.abs(jets.eta) > 2.7) & (np.abs(jets.eta) <= 3.0))
-            & jetidtightbit
-            & (jets.neHEF >= 0.99)
-        )
-        | ((np.abs(jets.eta) > 3.0) & jetidtightbit & (jets.neEmEF < 0.4))
-    )
-
-    jetidtightlepveto = (
-        (np.abs(jets.eta) <= 2.7) & jetidtight & (jets.muEF < 0.8) & (jets.chEmEF < 0.8)
-    ) | ((np.abs(jets.eta) > 2.7) & jetidtight)
-
+def good_ak4jets(jets: JetArray, nano_version: str):
+    if nano_version.startswith("v12"):
+        jetidtight, jetidtightlepveto = jetid_v12(jets)  # v12 jetid fix
+    else:
+        raise NotImplementedError(f"Jet ID fix not implemented yet for {nano_version}")
     jet_sel = (jets.pt > 15) & (np.abs(jets.eta) < 4.7) & jetidtight & jetidtightlepveto
 
     return jets[jet_sel]
