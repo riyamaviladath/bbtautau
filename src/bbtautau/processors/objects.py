@@ -87,10 +87,14 @@ def good_ak8jets(
     eta: float,
     msd: float,  # noqa: ARG001
     mreg: float,  # noqa: ARG001
-    mreg_str="particleNet_mass_legacy",  # noqa: ARG001
+    nano_version: str,
+    mreg_str: str = "particleNet_mass_legacy",  # noqa: ARG001
 ):
+    if nano_version.startswith("v12"):
+        jetidtight, jetidtightlepveto = jetid_v12(fatjets)  # v12 jetid fix
+    else:
+        raise NotImplementedError(f"Jet ID fix not implemented yet for {nano_version}")
 
-    jetidtight, jetidtightlepveto = jetid_v12(fatjets)  # v12 jetid fix
     fatjet_sel = (
         jetidtight
         & (fatjets.pt > object_pt)
@@ -100,8 +104,11 @@ def good_ak8jets(
     return fatjets[fatjet_sel]
 
 
-def good_ak4jets(jets: JetArray):
-    jetidtight, jetidtightlepveto = jetid_v12(jets)  # v12 jetid fix
+def good_ak4jets(jets: JetArray, nano_version: str):
+    if nano_version.startswith("v12"):
+        jetidtight, jetidtightlepveto = jetid_v12(jets)  # v12 jetid fix
+    else:
+        raise NotImplementedError(f"Jet ID fix not implemented yet for {nano_version}")
     jet_sel = (jets.pt > 15) & (np.abs(jets.eta) < 4.7) & jetidtight & jetidtightlepveto
 
     return jets[jet_sel]
