@@ -33,7 +33,7 @@ from boostedhh.processors.utils import (
 from coffea import processor
 from coffea.analysis_tools import PackedSelection, Weights
 
-from bbtautau import bbtautau_vars
+from bbtautau.HLTs import HLTs
 
 from . import GenSelection, objects
 
@@ -150,9 +150,8 @@ class bbtautauSkimmer(SkimmerABC):
         self.XSECS = xsecs if xsecs is not None else {}  # in pb
 
         # HLT selection
-        HLTs = {"signal": bbtautau_vars.HLT_list}
-
-        self.HLTs = HLTs[region]
+        self.HLTs = {"signal": HLTs.hlt_list()}
+        self.HLTs = self.HLTs[region]
         self._systematics = save_systematics
         self._nano_version = nano_version
         self._region = region
@@ -481,11 +480,11 @@ class bbtautauSkimmer(SkimmerABC):
         HLTVars = {}
         zeros = np.zeros(len(events), dtype="int")
         for trigger in self.HLTs[year]:
-            if trigger[4:] in events.HLT.fields:
-                HLTVars[trigger] = events.HLT[trigger[4:]].to_numpy().astype(int)
+            if trigger in events.HLT.fields:
+                HLTVars[f"HLT_{trigger}"] = events.HLT[trigger].to_numpy().astype(int)
             else:
                 logger.warning(f"Missing {trigger}!")
-                HLTVars[trigger] = zeros
+                HLTVars[f"HLT_{trigger}"] = zeros
 
         print("HLT vars", f"{time.time() - start:.2f}")
 
@@ -537,11 +536,7 @@ class bbtautauSkimmer(SkimmerABC):
 
         HLT_triggered = np.any(
             np.array(
-                [
-                    events.HLT[trigger[4:]]
-                    for trigger in self.HLTs[year]
-                    if trigger[4:] in events.HLT.fields
-                ]
+                [events.HLT[trigger] for trigger in self.HLTs[year] if trigger in events.HLT.fields]
             ),
             axis=0,
         )
