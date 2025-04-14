@@ -33,7 +33,7 @@ from boostedhh.processors.utils import (
 from coffea import processor
 from coffea.analysis_tools import PackedSelection, Weights
 
-from bbtautau import HLTs
+from bbtautau.HLTs import HLTs
 
 from . import GenSelection, objects
 

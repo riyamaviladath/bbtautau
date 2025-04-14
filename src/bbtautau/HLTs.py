@@ -184,7 +184,7 @@ class HLTs:
         return {
             year: [
                 (hlt.name if as_str else hlt)
-                for sublist in cls.hlt_dict()[year].values()
+                for sublist in cls.hlt_dict(year, as_str=False).values()
                 for hlt in sublist
             ]
             for year in years
@@ -243,7 +243,7 @@ class HLTs:
         hlts = cls.hlt_dict(year, as_str, data_only, mc_only)
 
         if isinstance(hlt_type, str):
-            return hlts[hlt_type]
+            return hlts[hlt_type.lower()]
         else:
             return [hlt for ht in hlt_type for hlt in hlts[ht.lower()]]
 

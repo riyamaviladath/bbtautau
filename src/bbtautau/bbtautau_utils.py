@@ -15,7 +15,6 @@ class Channel:
     label: str  # label for plotting
     data_samples: list[str]  # datasets for this channel
     hlt_types: list[str]  # list of HLT types
-    triggers: list[str] | dict[str, list[str]]  # list of triggers or dict of triggers per year
     isLepton: bool  # lepton channel or fully hadronic
     lepton_dataset: str = None  # lepton dataset (if applicable)
 
