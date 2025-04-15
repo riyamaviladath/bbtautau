@@ -1,34 +1,32 @@
 from __future__ import annotations
 
 from boostedhh import hh_vars
-from boostedhh.utils import Channel, Sample
+from boostedhh.utils import Sample
 
-from bbtautau import bbtautau_vars
+from bbtautau.bbtautau_utils import Channel
 
 CHANNELS = {
     "hh": Channel(
         key="hh",
         label=r"$\tau_h\tau_h$",
-        triggers=bbtautau_vars.HLT_hh,
+        hlt_types=["PNet", "PFJet", "QuadJet", "DiTau", "DitauJet", "SingleTau"],
         data_samples=["jetmet", "tau"],
         isLepton=False,
     ),
     "he": Channel(
         key="he",
         label=r"$\tau_h e$",
-        triggers=bbtautau_vars.HLT_he,
+        hlt_types=["PNet", "PFJet", "EGamma", "ETau", "DiTau", "DitauJet", "SingleTau"],
         data_samples=["jetmet", "tau", "egamma"],
         lepton_dataset="egamma",
-        lepton_triggers=bbtautau_vars.HLT_egammas,
         isLepton=True,
     ),
     "hm": Channel(
         key="hm",
         label=r"$\tau_h \mu$",
-        triggers=bbtautau_vars.HLT_hmu,
+        hlt_types=["PNet", "PFJet", "Muon", "MuonTau", "DiTau", "DitauJet", "SingleTau"],
         data_samples=["jetmet", "tau", "muon"],
         lepton_dataset="muon",
-        lepton_triggers=bbtautau_vars.HLT_muons,
         isLepton=True,
     ),
 }
@@ -108,13 +106,13 @@ SAMPLES = {
 }
 
 SIGNALS = ["bbtt", "vbfbbtt-k2v0"]
-SIGNALS_CHANNELS = ["bbtt", "vbfbbtt-k2v0"]
+SIGNALS_CHANNELS = SIGNALS.copy()
 
 # add individual bbtt channels
 for signal in SIGNALS.copy():
-    for channel in CHANNELS:
+    for channel, CHANNEL in CHANNELS.items():
         SAMPLES[f"{signal}{channel}"] = Sample(
-            label=SAMPLES[signal].label,
+            label=SAMPLES[signal].label.replace(r"$\tau\tau$", CHANNEL.label),
             isSignal=True,
         )
         SIGNALS_CHANNELS.append(f"{signal}{channel}")
@@ -135,12 +133,3 @@ BGS = [
 qcdouts = ["QCD0HF", "QCD1HF", "QCD2HF"]
 topouts = ["TopW", "TopbW", "TopbWev", "TopbWmv", "TopbWtauhv", "TopbWq", "TopbWqq"][:2]
 sigouts = ["Xtauhtauh", "Xtauhtaue", "Xtauhtaum", "Xbb"]
-
-
-def get_stype(key: str) -> str:
-    if SAMPLES[key].isData:
-        return "data"
-    elif SAMPLES[key].isSignal:
-        return "signal"
-    else:
-        return "bg"

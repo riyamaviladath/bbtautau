@@ -18,14 +18,14 @@ from coffea.nanoevents.methods.nanoaod import (
     TauArray,
 )
 
-from bbtautau import bbtautau_vars
+from bbtautau.HLTs import HLTs
 
 
 def trig_match_sel(events, leptons, trig_leptons, year, trigger, filterbit, ptcut, trig_dR=0.2):
     """
     Returns selection for leptons which are trigger matched to the specified trigger.
     """
-    trigger = bbtautau_vars.HLT_dict[year][trigger][0][4:]
+    trigger = HLTs.hlts_by_type(year, trigger, hlt_prefix=False)[0]  # picking first trigger in list
     trig_fired = events.HLT[trigger]
     # print(f"{trigger} rate: {ak.mean(trig_fired)}")
 

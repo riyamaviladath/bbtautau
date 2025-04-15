@@ -33,7 +33,7 @@ from boostedhh.processors.utils import (
 from coffea import processor
 from coffea.analysis_tools import PackedSelection, Weights
 
-from bbtautau import bbtautau_vars
+from bbtautau.HLTs import HLTs
 
 from . import GenSelection, objects
 
@@ -61,6 +61,10 @@ class bbtautauSkimmer(SkimmerABC):
             **P4,
             "rawFactor": "rawFactor",
             "btagPNetB": "btagPNetB",
+        },
+        "MET": {
+            "pt": "Pt",
+            "phi": "Phi",
         },
         "Lepton": {
             **P4,
@@ -150,9 +154,8 @@ class bbtautauSkimmer(SkimmerABC):
         self.XSECS = xsecs if xsecs is not None else {}  # in pb
 
         # HLT selection
-        HLTs = {"signal": bbtautau_vars.HLT_list}
-
-        self.HLTs = HLTs[region]
+        self.HLTs = {"signal": HLTs.hlt_list(hlt_prefix=False)}
+        self.HLTs = self.HLTs[region]
         self._systematics = save_systematics
         self._nano_version = nano_version
         self._region = region
@@ -455,14 +458,18 @@ class bbtautauSkimmer(SkimmerABC):
         #             label = "" if shift == "" else "_" + shift
         #             bbFatJetVars[f"bbFatJet{key}{label}"] = vals
 
+        # MET
+        metVars = {
+            f"MET{key}": pad_val(met[var], 1, axis=1)
+            for (var, key) in self.skim_vars["MET"].items()
+        }
+
         # Event variables
-        met_pt = met.pt
         eventVars = {
             key: events[val].to_numpy()
             for key, val in self.skim_vars["Event"].items()
             if key in events.fields
         }
-        eventVars["MET_pt"] = met_pt.to_numpy()
         eventVars["ht"] = ht.to_numpy()
         eventVars["nElectrons"] = ak.num(electrons).to_numpy()
         eventVars["nMuons"] = ak.num(muons).to_numpy()
@@ -481,11 +488,11 @@ class bbtautauSkimmer(SkimmerABC):
         HLTVars = {}
         zeros = np.zeros(len(events), dtype="int")
         for trigger in self.HLTs[year]:
-            if trigger[4:] in events.HLT.fields:
-                HLTVars[trigger] = events.HLT[trigger[4:]].to_numpy().astype(int)
+            if trigger in events.HLT.fields:
+                HLTVars[f"HLT_{trigger}"] = events.HLT[trigger].to_numpy().astype(int)
             else:
                 logger.warning(f"Missing {trigger}!")
-                HLTVars[trigger] = zeros
+                HLTVars[f"HLT_{trigger}"] = zeros
 
         print("HLT vars", f"{time.time() - start:.2f}")
 
@@ -516,6 +523,7 @@ class bbtautauSkimmer(SkimmerABC):
             **leptonVars,
             **ak4JetVars,
             **ak8FatJetVars,
+            **metVars,
             # **bbFatJetVars,
             # **trigObjFatJetVars,
             # **vbfJetVars,
@@ -537,11 +545,7 @@ class bbtautauSkimmer(SkimmerABC):
 
         HLT_triggered = np.any(
             np.array(
-                [
-                    events.HLT[trigger[4:]]
-                    for trigger in self.HLTs[year]
-                    if trigger[4:] in events.HLT.fields
-                ]
+                [events.HLT[trigger] for trigger in self.HLTs[year] if trigger in events.HLT.fields]
             ),
             axis=0,
         )
