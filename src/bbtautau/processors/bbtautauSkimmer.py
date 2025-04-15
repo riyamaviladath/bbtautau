@@ -150,7 +150,7 @@ class bbtautauSkimmer(SkimmerABC):
         self.XSECS = xsecs if xsecs is not None else {}  # in pb
 
         # HLT selection
-        self.HLTs = {"signal": HLTs.hlt_list()}
+        self.HLTs = {"signal": HLTs.hlt_list(hlt_prefix=False)}
         self.HLTs = self.HLTs[region]
         self._systematics = save_systematics
         self._nano_version = nano_version

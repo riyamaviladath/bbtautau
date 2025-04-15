@@ -20,6 +20,14 @@ base_filters = [
 ]
 
 
+def bb_filters(num_fatjets: int = 3):
+    filters = [
+        base_filters + [(f"('ak8FatJetPNetXbbLegacy', '{n}')", ">=", 0.8)]
+        for n in range(num_fatjets)
+    ]
+    return filters
+
+
 def trigger_filter(
     triggers: dict[str, list[str]],
     base_filters: list[tuple] = base_filters,
@@ -125,19 +133,23 @@ def load_samples(
 
     # load samples
     for key, sample in samples.items():
+        if isinstance(filters_dict, dict):
+            filters = filters_dict[sample.get_type()][year]
+        else:
+            filters = filters_dict
+
         if sample.selector is not None:
-            print(f"Loading {key}...")
             events_dict[key] = utils.load_sample(
                 sample,
                 year,
                 paths,
-                filters_dict[sample.get_type()][year] if filters_dict is not None else None,
+                filters,
             )
 
     # keep only the specified bbtt channel
     for signal in signals:
+        # quick fix due to old naming still in samples
         events_dict[f"{signal}{channel.key}"] = events_dict[signal][
-            # quick fix due to old naming still in samples
             events_dict[signal][f"GenTau{channel.key}" + "u" * (channel.key == "hm")][0]
         ]
         del events_dict[signal]
@@ -210,7 +222,7 @@ def apply_triggers(
             ).astype(bool)
             events_dict[skey] = events[triggered]
 
-    if any(Samples.SAMPLES(skey).isData for skey in events_dict):
+    if any(Samples.SAMPLES[skey].isData for skey in events_dict):
         apply_triggers_data(events_dict, year, channel)
 
     return events_dict

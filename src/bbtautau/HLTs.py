@@ -171,28 +171,13 @@ class HLTs:
     }
 
     @classmethod
-    def hlt_list(cls, as_str: bool = True) -> dict[str, list[HLT | str]]:
-        """
-        Combine into a single list of HLTs per year.
-
-        Args:
-            as_str (bool): if True, return HLT names only. If False, return HLT objects. Defaults to True.
-
-        Returns:
-            dict[str, list[HLT | str]]: format is ``{year: [hlt, ...]}``
-        """
-        return {
-            year: [
-                (hlt.name if as_str else hlt)
-                for sublist in cls.hlt_dict(year, as_str=False).values()
-                for hlt in sublist
-            ]
-            for year in years
-        }
-
-    @classmethod
     def hlt_dict(
-        cls, year: str, as_str: bool = True, data_only: bool = False, mc_only: bool = False
+        cls,
+        year: str,
+        as_str: bool = True,
+        hlt_prefix: bool = True,
+        data_only: bool = False,
+        mc_only: bool = False,
     ) -> dict[str, list[HLT | str]]:
         """
         Convert into a dictionary of HLTs per year, optionally filtered by data or MC.
@@ -211,7 +196,7 @@ class HLTs:
 
         return {
             hlt_type: [
-                (hlt.name if as_str else hlt)
+                (hlt.get_name(hlt_prefix) if as_str else hlt)
                 for hlt in hlt_list
                 if hlt.check_year(year, data_only, mc_only)
             ]
@@ -219,13 +204,35 @@ class HLTs:
         }
 
     @classmethod
+    def hlt_list(
+        cls, as_str: bool = True, hlt_prefix: bool = True, **hlt_kwargs
+    ) -> dict[str, list[HLT | str]]:
+        """
+        Combine into a dict of lists of HLTs per year.
+
+        Args:
+            as_str (bool): if True, return HLT names only. If False, return HLT objects. Defaults to True.
+            hlt_prefix (bool): if True, return HLT names with "HLT_" prefix. If False, return HLT names without "HLT_" prefix. Defaults to True.
+            **hlt_kwargs: additional kwargs to pass to the hlt_dict function.
+
+        Returns:
+            dict[str, list[HLT | str]]: format is ``{year: [hlt, ...]}``
+        """
+        return {
+            year: [
+                (hlt.get_name(hlt_prefix) if as_str else hlt)
+                for sublist in cls.hlt_dict(year, as_str=False, **hlt_kwargs).values()
+                for hlt in sublist
+            ]
+            for year in years
+        }
+
+    @classmethod
     def hlts_by_type(
         cls,
         year: str,
         hlt_type: str | list[str],
-        as_str: bool = True,
-        data_only: bool = False,
-        mc_only: bool = False,
+        **hlt_kwargs,
     ) -> list[HLT | str]:
         """
         HLTs per year and type(s), with optional filters.
@@ -233,14 +240,12 @@ class HLTs:
         Args:
             year (str): year to filter by.
             hlt_type (str | list[str]): filter by HLT type(s) out of ["PNet", "PFJet", "QuadJet", "DiTau", "SingleTau", "Muon", "EGamma", "MET", "Parking"].
-            as_str (bool): if True, return HLT names only. If False, return HLT objects. Defaults to True.
-            data_only (bool): filter by HLTs in data for that year. Defaults to False.
-            mc_only (bool): filter by HLTs in MC for that year. Defaults to False.
+            **hlt_kwargs: additional kwargs to pass to the hlt_dict function.
 
         Returns:
             list[HLT | str]: list of HLTs
         """
-        hlts = cls.hlt_dict(year, as_str, data_only, mc_only)
+        hlts = cls.hlt_dict(year, **hlt_kwargs)
 
         if isinstance(hlt_type, str):
             return hlts[hlt_type.lower()]
@@ -253,8 +258,8 @@ class HLTs:
         year: str,
         dataset: str,
         as_str: bool = True,
-        data_only: bool = False,
-        mc_only: bool = False,
+        hlt_prefix: bool = True,
+        **hlt_kwargs,
     ) -> list[HLT | str]:
         """
         HLTs per year and dataset, with optional filters.
@@ -263,15 +268,17 @@ class HLTs:
             year (str): year to filter by.
             dataset (str): filter by dataset out of ["JetMET", "Tau", "Muon", "EGamma", "ParkingHH"].
             as_str (bool): if True, return HLT names only. If False, return HLT objects. Defaults to True.
-            data_only (bool): filter by HLTs in data for that year. Defaults to False.
-            mc_only (bool): filter by HLTs in MC for that year. Defaults to False.
+            hlt_prefix (bool): if True, return HLT names with "HLT_" prefix. If False, return HLT names without "HLT_" prefix. Defaults to True.
+            **hlt_kwargs: additional kwargs to pass to the hlt_list function.
 
         Returns:
             list[HLT | str]: list of HLTs
         """
-        hlts = cls.hlt_list(False, data_only, mc_only)[year]
+        hlts = cls.hlt_list(False, **hlt_kwargs)[year]
         ret_hlts = [
-            (hlt.name if as_str else hlt) for hlt in hlts if hlt.dataset.lower() == dataset.lower()
+            (hlt.get_name(hlt_prefix) if as_str else hlt)
+            for hlt in hlts
+            if hlt.dataset.lower() == dataset.lower()
         ]
 
         if len(ret_hlts) == 0:
