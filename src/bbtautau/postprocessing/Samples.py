@@ -106,13 +106,13 @@ SAMPLES = {
 }
 
 SIGNALS = ["bbtt", "vbfbbtt-k2v0"]
-SIGNALS_CHANNELS = ["bbtt", "vbfbbtt-k2v0"]
+SIGNALS_CHANNELS = SIGNALS.copy()
 
 # add individual bbtt channels
 for signal in SIGNALS.copy():
-    for channel in CHANNELS:
+    for channel, CHANNEL in CHANNELS.items():
         SAMPLES[f"{signal}{channel}"] = Sample(
-            label=SAMPLES[signal].label,
+            label=SAMPLES[signal].label.replace(r"$\tau\tau$", CHANNEL.label),
             isSignal=True,
         )
         SIGNALS_CHANNELS.append(f"{signal}{channel}")
