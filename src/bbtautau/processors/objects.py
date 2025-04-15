@@ -25,7 +25,7 @@ def trig_match_sel(events, leptons, trig_leptons, year, trigger, filterbit, ptcu
     """
     Returns selection for leptons which are trigger matched to the specified trigger.
     """
-    trigger = HLTs.hlts_by_type(year, trigger)[0]  # picking first trigger in list
+    trigger = HLTs.hlts_by_type(year, trigger, hlt_prefix=False)[0]  # picking first trigger in list
     trig_fired = events.HLT[trigger]
     # print(f"{trigger} rate: {ak.mean(trig_fired)}")
 
