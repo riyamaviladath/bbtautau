@@ -1,14 +1,24 @@
+"""
+Postprocessing functions for bbtautau.
+
+Authors: Raghav Kansal, Ludovico Mori
+"""
+
 from __future__ import annotations
 
 import copy
+import pickle
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import plotting
 import Samples
 from boostedhh import utils
-from boostedhh.utils import Channel
+from boostedhh.utils import Sample, ShapeVar
 
-from bbtautau import bbtautau_vars
+from bbtautau.bbtautau_utils import Channel
+from bbtautau.HLTs import HLTs
 
 base_filters = [
     ("('ak8FatJetPt', '0')", ">=", 250),
@@ -18,6 +28,21 @@ base_filters = [
     # ("('ak8FatJetMsd', '1')", ">=", msd_cut),
     # ("('ak8FatJetPNetXbb', '0')", ">=", 0.8),
 ]
+
+
+control_plot_vars = [
+    ShapeVar(var="MET_pt", label=r"$p^{miss}_T$ [GeV]", bins=[20, 0, 300]),
+    # ShapeVar(var="MET_phi", label=r"$\phi^{miss}$", bins=[20, -3.2, 3.2]),
+    ShapeVar(var="ak8FatJetPt1", label=r"$p_{T}^{j1}$ [GeV]", bins=[20, 250, 1250]),
+]
+
+
+def bb_filters(num_fatjets: int = 3):
+    filters = [
+        base_filters + [(f"('ak8FatJetPNetXbbLegacy', '{n}')", ">=", 0.8)]
+        for n in range(num_fatjets)
+    ]
+    return filters
 
 
 def trigger_filter(
@@ -31,15 +56,15 @@ def trigger_filter(
     if fast_mode:
         base_filters += [("('ak8FatJetPNetXbbLegacy', '0')", ">=", 0.95)]
 
-    filters_dic = {}
+    filters_dict = {}
     for dtype, years in triggers.items():
-        filters_dic[dtype] = {}
+        filters_dict[dtype] = {}
         for year, trigger_list in years.items():
-            filters_dic[dtype][year] = [
+            filters_dict[dtype][year] = [
                 base_filters + [(f"('{trigger}', '0')", "==", 1)] for trigger in trigger_list
             ]
-    # print(f"\n\nTrigger filters_dic for data: {filters_dic['data']['2022'][0]}")
-    return filters_dic
+    # print(f"\n\nTrigger filters_dict for data: {filters_dict['data']['2022'][0]}")
+    return filters_dict
 
 
 def get_columns(
@@ -48,32 +73,37 @@ def get_columns(
     triggers: bool = True,
     legacy_taggers: bool = True,
     ParT_taggers: bool = True,
+    num_fatjets: int = 3,
 ):
 
-    columns_data = [("weight", 1), ("ak8FatJetPt", 3)]
+    columns_data = [("weight", 1), ("ak8FatJetPt", num_fatjets)]
+
+    # common columns
     if legacy_taggers:
         columns_data += [
-            ("ak8FatJetPNetXbbLegacy", 3),
-            ("ak8FatJetPNetQCDLegacy", 3),
-            ("ak8FatJetPNetmassLegacy", 3),
-            ("ak8FatJetParTmassResApplied", 3),
-            ("ak8FatJetParTmassVisApplied", 3),
+            ("ak8FatJetPNetXbbLegacy", num_fatjets),
+            ("ak8FatJetPNetQCDLegacy", num_fatjets),
+            ("ak8FatJetPNetmassLegacy", num_fatjets),
+            ("ak8FatJetParTmassResApplied", num_fatjets),
+            ("ak8FatJetParTmassVisApplied", num_fatjets),
         ]
-
-    columns_signal = copy.deepcopy(columns_data)
-
-    if triggers:
-        for branch in channel.triggers["data"][year]:
-            columns_data.append((branch, 1))
-        for branch in channel.triggers["signal"][year]:
-            columns_signal.append((branch, 1))
 
     if ParT_taggers:
         for branch in [
             f"ak8FatJetParT{key}" for key in Samples.qcdouts + Samples.topouts + Samples.sigouts
         ]:
-            columns_data.append((branch, 3))
-            columns_signal.append((branch, 3))
+            columns_data.append((branch, num_fatjets))
+
+    columns_mc = copy.deepcopy(columns_data)
+
+    if triggers:
+        for branch in channel.triggers(year, data_only=True):
+            columns_data.append((branch, 1))
+        for branch in channel.triggers(year, mc_only=True):
+            columns_mc.append((branch, 1))
+
+    # signal-only columns
+    columns_signal = copy.deepcopy(columns_mc)
 
     columns_signal += [
         ("GenTauhh", 1),
@@ -81,13 +111,12 @@ def get_columns(
         ("GenTauhe", 1),
     ]
 
-    columns_bg = copy.deepcopy(columns_signal)  # for now
-
     columns = {
         "data": utils.format_columns(columns_data),
         "signal": utils.format_columns(columns_signal),
-        "bg": utils.format_columns(columns_bg),
+        "bg": utils.format_columns(columns_mc),
     }
+
     return columns
 
 
@@ -95,7 +124,7 @@ def load_samples(
     year: str,
     channel: Channel,
     paths: dict[str],
-    filters_dic: dict[str, dict[str, list[list[tuple]]]] = None,
+    filters_dict: dict[str, dict[str, list[list[tuple]]]] = None,
     load_columns: dict[str, list[tuple]] = None,
     load_bgs: bool = False,
     load_just_bbtt: bool = False,
@@ -116,48 +145,55 @@ def load_samples(
 
     # load only the specified columns
     if load_columns is not None:
-        for key, sample in samples.items():
-            sample.load_columns = load_columns[Samples.get_stype(key)]
+        for sample in samples.values():
+            sample.load_columns = load_columns[sample.get_type()]
 
     # load samples
     for key, sample in samples.items():
+        if isinstance(filters_dict, dict):
+            filters = filters_dict[sample.get_type()][year]
+        else:
+            filters = filters_dict
+
         if sample.selector is not None:
-            print(f"Loading {key}...")
             events_dict[key] = utils.load_sample(
                 sample,
                 year,
                 paths,
-                filters_dic[Samples.get_stype(key)][year] if filters_dic is not None else None,
+                filters,
             )
 
     # keep only the specified bbtt channel
     for signal in signals:
+        # quick fix due to old naming still in samples
         events_dict[f"{signal}{channel.key}"] = events_dict[signal][
-            events_dict[signal][f"GenTau{channel.key}" + "u" * (channel.key == "hm")][
-                0
-            ]  # quick fix due to old naming still in samples
+            events_dict[signal][f"GenTau{channel.key}" + "u" * (channel.key == "hm")][0]
         ]
         del events_dict[signal]
 
     return events_dict
 
 
-def remove_overlap(events_dict: dict[str, pd.DataFrame], year: str, channel: Channel):
-    # data overlap removal (never done in MC)
+def apply_triggers_data(events_dict: dict[str, pd.DataFrame], year: str, channel: Channel):
+    """Apply triggers to data and remove overlap between datasets due to multiple triggers fired in an event."""
     ldataset = channel.lepton_dataset
 
+    # storing triggers fired per dataset
     trigdict = {"jetmet": {}, "tau": {}}
     if channel.isLepton:
         trigdict[ldataset] = {}
         lepton_triggers = utils.list_intersection(
-            channel.lepton_triggers, channel.triggers["data"][year]
+            channel.lepton_triggers(year), channel.triggers(year, data_only=True)
         )
 
+    # JetMET triggers considered in this channel
     jet_triggers = utils.list_intersection(
-        bbtautau_vars.HLT_jets["data"][year], channel.triggers["data"][year]
+        HLTs.hlts_by_dataset(year, "JetMET", data_only=True), channel.triggers(year, data_only=True)
     )
+
+    # Tau triggers considered in this channel
     tau_triggers = utils.list_intersection(
-        bbtautau_vars.HLT_taus["data"][year], channel.triggers["data"][year]
+        HLTs.hlts_by_dataset(year, "Tau", data_only=True), channel.triggers(year, data_only=True)
     )
 
     for key, d in trigdict.items():
@@ -193,18 +229,20 @@ def apply_triggers(
     events_dict: dict[str, pd.DataFrame],
     year: str,
     channel: Channel,
-    remove_overlap_flag: bool = True,
 ):
     """Apply triggers in MC and data, and remove overlap between datasets."""
     # MC
     for skey, events in events_dict.items():
-        if skey in Samples.SIGNALS_CHANNELS:
+        if not Samples.SAMPLES[skey].isData:
             triggered = np.sum(
-                [events[hlt][0] for hlt in channel.triggers["signal"][year]], axis=0
+                [events[hlt][0] for hlt in channel.triggers(year, mc_only=True)], axis=0
             ).astype(bool)
             events_dict[skey] = events[triggered]
 
-    return remove_overlap(events_dict, year, channel) if remove_overlap_flag else events_dict
+    if any(Samples.SAMPLES[skey].isData for skey in events_dict):
+        apply_triggers_data(events_dict, year, channel)
+
+    return events_dict
 
 
 def delete_columns(
@@ -212,11 +250,108 @@ def delete_columns(
 ):
     for sample_key, sample_events in events_dict.items():
         print(sample_key, len(sample_events))
+        isData = Samples.SAMPLES[sample_key].isData
         if triggers:
             sample_events.drop(
                 columns=list(
                     set(sample_events.columns)
-                    - set(channel.triggers[Samples.get_stype(sample_key)][year])
+                    - set(channel.triggers(year, data_only=isData, mc_only=not isData))
                 )
             )
     return events_dict
+
+
+def control_plots(
+    events_dict: dict[str, pd.DataFrame],
+    channel: Channel,
+    # bb_masks: dict[str, pd.DataFrame],
+    sigs: dict[str, Sample],
+    bgs: dict[str, Sample],
+    control_plot_vars: list[ShapeVar],
+    plot_dir: Path,
+    year: str,
+    weight_key: str = "finalWeight",
+    hists: dict = None,
+    cutstr: str = "",
+    title: str = None,
+    selection: dict[str, np.ndarray] = None,
+    sig_scale_dict: dict[str, float] = None,
+    combine_pdf: bool = True,
+    plot_ratio: bool = True,
+    plot_significance: bool = False,
+    same_ylim: bool = False,
+    show: bool = False,
+    log: tuple[bool, str] = "both",
+):
+    """
+    Makes and plots histograms of each variable in ``control_plot_vars``.
+
+    Args:
+        control_plot_vars (Dict[str, Tuple]): Dictionary of variables to plot, formatted as
+          {var1: ([num bins, min, max], label), var2...}.
+        sig_splits: split up signals into different plots (in case there are too many for one)
+        HEM2d: whether to plot 2D hists of FatJet phi vs eta for bb and VV jets as a check for HEM cleaning.
+        plot_ratio: whether to plot the data/MC ratio.
+        plot_significance: whether to plot the significance as well as the ratio plot.
+        same_ylim: whether to use the same y-axis limits for all plots.
+        log: True or False if plot on log scale or not - or "both" if both.
+    """
+
+    from PyPDF2 import PdfMerger
+
+    if hists is None:
+        hists = {}
+    if sig_scale_dict is None:
+        sig_scale_dict = {sig_key: 2e5 for sig_key in sigs}
+
+    print(control_plot_vars)
+    print(selection)
+    print(list(events_dict.keys()))
+
+    for shape_var in control_plot_vars:
+        if shape_var.var not in hists:
+            hists[shape_var.var] = utils.singleVarHist(
+                events_dict, shape_var, weight_key=weight_key, selection=selection
+            )
+
+    print(hists)
+
+    ylim = np.max([h.values() for h in hists.values()]) * 1.05 if same_ylim else None
+
+    with (plot_dir / "hists.pkl").open("wb") as f:
+        pickle.dump(hists, f)
+
+    do_log = [True, False] if log == "both" else [log]
+
+    for log, logstr in [(False, ""), (True, "_log")]:
+        if log not in do_log:
+            continue
+
+        merger_control_plots = PdfMerger()
+
+        for shape_var in control_plot_vars:
+            name = f"{plot_dir}/{cutstr}{shape_var.var}{logstr}.pdf"
+            plotting.ratioHistPlot(
+                hists[shape_var.var],
+                year,
+                list(sigs.keys()),
+                list(bgs.keys()),
+                name=name,
+                title=title,
+                sig_scale_dict=sig_scale_dict if not log else None,
+                plot_significance=plot_significance,
+                significance_dir=shape_var.significance_dir,
+                show=show,
+                log=log,
+                ylim=ylim if not log else 1e15,
+                plot_ratio=plot_ratio,
+                region_label=channel.label,
+            )
+            merger_control_plots.append(name)
+
+        if combine_pdf:
+            merger_control_plots.write(f"{plot_dir}/{cutstr}{year}{logstr}_ControlPlots.pdf")
+
+        merger_control_plots.close()
+
+    return hists
