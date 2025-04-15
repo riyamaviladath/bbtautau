@@ -31,7 +31,7 @@ HLT_2022 = {
         # "HLT_VBF_DoubleMediumDeepTauPFTauHPS20_eta2p1",
         # "HLT_DoublePFJets40_Mass500_MediumDeepTauPFTauHPS45_L2NN_MediumDeepTauPFTauHPS20_eta2p1",
     ],
-    "DitauJet": [
+    "DiTauJet": [
         "HLT_DoubleMediumDeepTauPFTauHPS30_L2NN_eta2p1_PFJet60",
         "HLT_DoubleMediumDeepTauPFTauHPS30_L2NN_eta2p1_PFJet75",
     ],
