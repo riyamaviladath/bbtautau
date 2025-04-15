@@ -62,6 +62,10 @@ class bbtautauSkimmer(SkimmerABC):
             "rawFactor": "rawFactor",
             "btagPNetB": "btagPNetB",
         },
+        "MET": {
+            "pt": "Pt",
+            "phi": "Phi",
+        },
         "Lepton": {
             **P4,
             "charge": "charge",
@@ -150,7 +154,7 @@ class bbtautauSkimmer(SkimmerABC):
         self.XSECS = xsecs if xsecs is not None else {}  # in pb
 
         # HLT selection
-        self.HLTs = {"signal": HLTs.hlt_list()}
+        self.HLTs = {"signal": HLTs.hlt_list(hlt_prefix=False)}
         self.HLTs = self.HLTs[region]
         self._systematics = save_systematics
         self._nano_version = nano_version
@@ -454,14 +458,18 @@ class bbtautauSkimmer(SkimmerABC):
         #             label = "" if shift == "" else "_" + shift
         #             bbFatJetVars[f"bbFatJet{key}{label}"] = vals
 
+        # MET
+        metVars = {
+            f"MET{key}": pad_val(met[var], 1, axis=1)
+            for (var, key) in self.skim_vars["MET"].items()
+        }
+
         # Event variables
-        met_pt = met.pt
         eventVars = {
             key: events[val].to_numpy()
             for key, val in self.skim_vars["Event"].items()
             if key in events.fields
         }
-        eventVars["MET_pt"] = met_pt.to_numpy()
         eventVars["ht"] = ht.to_numpy()
         eventVars["nElectrons"] = ak.num(electrons).to_numpy()
         eventVars["nMuons"] = ak.num(muons).to_numpy()
@@ -515,6 +523,7 @@ class bbtautauSkimmer(SkimmerABC):
             **leptonVars,
             **ak4JetVars,
             **ak8FatJetVars,
+            **metVars,
             # **bbFatJetVars,
             # **trigObjFatJetVars,
             # **vbfJetVars,

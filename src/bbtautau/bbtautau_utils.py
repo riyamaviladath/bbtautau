@@ -18,16 +18,24 @@ class Channel:
     isLepton: bool  # lepton channel or fully hadronic
     lepton_dataset: str = None  # lepton dataset (if applicable)
 
-    def triggers(self, year: str, data_only: bool = False, mc_only: bool = False):
+    def triggers(
+        self,
+        year: str,
+        **hlt_kwargs,
+    ):
         """Get triggers for a given year for this channel."""
-        return HLTs.hlts_by_type(year, self.hlt_types, data_only, mc_only)
+        return HLTs.hlts_by_type(year, self.hlt_types, **hlt_kwargs)
 
-    def lepton_triggers(self, year: str, data_only: bool = False, mc_only: bool = False):
+    def lepton_triggers(
+        self,
+        year: str,
+        **hlt_kwargs,
+    ):
         """Get lepton triggers for a given year for this channel."""
         if self.lepton_dataset is None:
             return None
 
-        return HLTs.hlts_by_dataset(year, self.lepton_dataset, data_only, mc_only)
+        return HLTs.hlts_by_dataset(year, self.lepton_dataset, **hlt_kwargs)
 
 
 def parse_common_run_args(parser):

@@ -1,11 +1,21 @@
+"""
+Postprocessing functions for bbtautau.
+
+Authors: Raghav Kansal, Ludovico Mori
+"""
+
 from __future__ import annotations
 
 import copy
+import pickle
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import plotting
 import Samples
 from boostedhh import utils
+from boostedhh.utils import Sample, ShapeVar
 
 from bbtautau.bbtautau_utils import Channel
 from bbtautau.HLTs import HLTs
@@ -18,6 +28,21 @@ base_filters = [
     # ("('ak8FatJetMsd', '1')", ">=", msd_cut),
     # ("('ak8FatJetPNetXbb', '0')", ">=", 0.8),
 ]
+
+
+control_plot_vars = [
+    ShapeVar(var="MET_pt", label=r"$p^{miss}_T$ [GeV]", bins=[20, 0, 300]),
+    # ShapeVar(var="MET_phi", label=r"$\phi^{miss}$", bins=[20, -3.2, 3.2]),
+    ShapeVar(var="ak8FatJetPt1", label=r"$p_{T}^{j1}$ [GeV]", bins=[20, 250, 1250]),
+]
+
+
+def bb_filters(num_fatjets: int = 3):
+    filters = [
+        base_filters + [(f"('ak8FatJetPNetXbbLegacy', '{n}')", ">=", 0.8)]
+        for n in range(num_fatjets)
+    ]
+    return filters
 
 
 def trigger_filter(
@@ -125,19 +150,23 @@ def load_samples(
 
     # load samples
     for key, sample in samples.items():
+        if isinstance(filters_dict, dict):
+            filters = filters_dict[sample.get_type()][year]
+        else:
+            filters = filters_dict
+
         if sample.selector is not None:
-            print(f"Loading {key}...")
             events_dict[key] = utils.load_sample(
                 sample,
                 year,
                 paths,
-                filters_dict[sample.get_type()][year] if filters_dict is not None else None,
+                filters,
             )
 
     # keep only the specified bbtt channel
     for signal in signals:
+        # quick fix due to old naming still in samples
         events_dict[f"{signal}{channel.key}"] = events_dict[signal][
-            # quick fix due to old naming still in samples
             events_dict[signal][f"GenTau{channel.key}" + "u" * (channel.key == "hm")][0]
         ]
         del events_dict[signal]
@@ -210,7 +239,7 @@ def apply_triggers(
             ).astype(bool)
             events_dict[skey] = events[triggered]
 
-    if any(Samples.SAMPLES(skey).isData for skey in events_dict):
+    if any(Samples.SAMPLES[skey].isData for skey in events_dict):
         apply_triggers_data(events_dict, year, channel)
 
     return events_dict
@@ -230,3 +259,99 @@ def delete_columns(
                 )
             )
     return events_dict
+
+
+def control_plots(
+    events_dict: dict[str, pd.DataFrame],
+    channel: Channel,
+    # bb_masks: dict[str, pd.DataFrame],
+    sigs: dict[str, Sample],
+    bgs: dict[str, Sample],
+    control_plot_vars: list[ShapeVar],
+    plot_dir: Path,
+    year: str,
+    weight_key: str = "finalWeight",
+    hists: dict = None,
+    cutstr: str = "",
+    title: str = None,
+    selection: dict[str, np.ndarray] = None,
+    sig_scale_dict: dict[str, float] = None,
+    combine_pdf: bool = True,
+    plot_ratio: bool = True,
+    plot_significance: bool = False,
+    same_ylim: bool = False,
+    show: bool = False,
+    log: tuple[bool, str] = "both",
+):
+    """
+    Makes and plots histograms of each variable in ``control_plot_vars``.
+
+    Args:
+        control_plot_vars (Dict[str, Tuple]): Dictionary of variables to plot, formatted as
+          {var1: ([num bins, min, max], label), var2...}.
+        sig_splits: split up signals into different plots (in case there are too many for one)
+        HEM2d: whether to plot 2D hists of FatJet phi vs eta for bb and VV jets as a check for HEM cleaning.
+        plot_ratio: whether to plot the data/MC ratio.
+        plot_significance: whether to plot the significance as well as the ratio plot.
+        same_ylim: whether to use the same y-axis limits for all plots.
+        log: True or False if plot on log scale or not - or "both" if both.
+    """
+
+    from PyPDF2 import PdfMerger
+
+    if hists is None:
+        hists = {}
+    if sig_scale_dict is None:
+        sig_scale_dict = {sig_key: 2e5 for sig_key in sigs}
+
+    print(control_plot_vars)
+    print(selection)
+    print(list(events_dict.keys()))
+
+    for shape_var in control_plot_vars:
+        if shape_var.var not in hists:
+            hists[shape_var.var] = utils.singleVarHist(
+                events_dict, shape_var, weight_key=weight_key, selection=selection
+            )
+
+    print(hists)
+
+    ylim = np.max([h.values() for h in hists.values()]) * 1.05 if same_ylim else None
+
+    with (plot_dir / "hists.pkl").open("wb") as f:
+        pickle.dump(hists, f)
+
+    do_log = [True, False] if log == "both" else [log]
+
+    for log, logstr in [(False, ""), (True, "_log")]:
+        if log not in do_log:
+            continue
+
+        merger_control_plots = PdfMerger()
+
+        for shape_var in control_plot_vars:
+            name = f"{plot_dir}/{cutstr}{shape_var.var}{logstr}.pdf"
+            plotting.ratioHistPlot(
+                hists[shape_var.var],
+                year,
+                list(sigs.keys()),
+                list(bgs.keys()),
+                name=name,
+                title=title,
+                sig_scale_dict=sig_scale_dict if not log else None,
+                plot_significance=plot_significance,
+                significance_dir=shape_var.significance_dir,
+                show=show,
+                log=log,
+                ylim=ylim if not log else 1e15,
+                plot_ratio=plot_ratio,
+                region_label=channel.label,
+            )
+            merger_control_plots.append(name)
+
+        if combine_pdf:
+            merger_control_plots.write(f"{plot_dir}/{cutstr}{year}{logstr}_ControlPlots.pdf")
+
+        merger_control_plots.close()
+
+    return hists
