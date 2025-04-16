@@ -87,13 +87,17 @@ def good_ak8jets(
     eta: float,
     msd: float,  # noqa: ARG001
     mreg: float,  # noqa: ARG001
-    nano_version: str,
+    nano_version: str,  # noqa: ARG001
     mreg_str: str = "particleNet_mass_legacy",  # noqa: ARG001
 ):
-    if nano_version.startswith("v12"):
-        jetidtight, jetidtightlepveto = jetid_v12(fatjets)  # v12 jetid fix
-    else:
-        raise NotImplementedError(f"Jet ID fix not implemented yet for {nano_version}")
+    # if nano_version.startswith("v12"):
+    #     jetidtight, jetidtightlepveto = jetid_v12(fatjets)  # v12 jetid fix
+    # else:
+    #     raise NotImplementedError(f"Jet ID fix not implemented yet for {nano_version}")
+
+    # Data does not have .neHEF etc. fields for fatjets, so above recipe doesn't work
+    # Either way, doesn't matter since we only use tightID, and it is correct for eta < 2.7
+    jetidtight = fatjets.isTight
 
     fatjet_sel = (
         jetidtight
