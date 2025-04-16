@@ -70,6 +70,7 @@ if __name__ == "__main__":
                 subsamples = sdict.get("subsamples", [])
                 args.maxchunks = sdict.get("maxchunks", 0)
                 args.chunksize = sdict.get("chunksize", 40000)
+                args.batch_size = sdict.get("batch_size", 20)
                 args.tag = tag
                 files_per_job = sdict["files_per_job"]
                 if isinstance(files_per_job, dict):

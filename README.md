@@ -33,6 +33,9 @@ Search for two boosted (high transverse momentum) Higgs bosons (H) decaying to t
     - [Troubleshooting](#troubleshooting)
   - [Running coffea processors](#running-coffea-processors)
     - [Setup](#setup)
+    - [Running locally](#running-locally)
+    - [Condor jobs](#condor-jobs)
+  - [Transferring files to FNAL with Rucio](#transferring-files-to-fnal-with-rucio)
 
 
 ## Setting up package
@@ -115,7 +118,13 @@ python src/run.py --samples HHbbtt --subsamples GluGlutoHHto2B2Tau_kl-1p00_kt-1p
 A single sample / subsample:
 
 ```bash
-python src/condor/submit.py --analysis bbtautau --git-branch signal_study --site ucsd --save-sites ucsd lpc --processor skimmer --samples HHbbtt --subsamples GluGlutoHHto2B2Tau_kl-1p00_kt-1p00_c2-0p00_LHEweights_TuneCP5_13p6TeV_powheg-pythia8 --files-per-job 5 --tag 24Nov7Signal --submit
+python src/condor/submit.py --analysis bbtautau --git-branch BRANCH-NAME --site ucsd --save-sites ucsd lpc --processor skimmer --samples HHbbtt --subsamples GluGlutoHHto2B2Tau_kl-1p00_kt-1p00_c2-0p00_LHEweights_TuneCP5_13p6TeV_powheg-pythia8 --files-per-job 5 --tag 24Nov7Signal --submit
+```
+
+Or from a YAML:
+
+```bash
+python src/condor/submit.py --yaml src/condor/submit_configs/25Apr5All.yaml --analysis bbtautau --git-branch addmc --site lpc --save-sites ucsd lpc --processor skimmer --tag 25Apr5AddVars
 ```
 
 ## Transferring files to FNAL with Rucio

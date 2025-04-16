@@ -160,6 +160,7 @@ Thumbs.db
 
 *.root
 *.parquet
+*.txt
 test.ipynb
 **/__pycache__
 **/.DS_Store
@@ -182,7 +183,7 @@ src/HH4b/boosted/**/*.pkl
 **/*test.ipynb
 **/*.json
 
-running_jobs.txt
+!data/*.json
 
 .bashrc
 .condor_config

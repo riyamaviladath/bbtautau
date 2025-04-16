@@ -33,6 +33,8 @@ from boostedhh.processors.utils import (
 from coffea import processor
 from coffea.analysis_tools import PackedSelection, Weights
 
+from bbtautau.HLTs import HLTs
+
 from . import GenSelection, objects
 
 # mapping samples to the appropriate function for doing gen-level selections
@@ -58,10 +60,27 @@ class bbtautauSkimmer(SkimmerABC):
         "Jet": {
             **P4,
             "rawFactor": "rawFactor",
+            "btagPNetB": "btagPNetB",
+        },
+        "MET": {
+            "pt": "Pt",
+            "phi": "Phi",
         },
         "Lepton": {
             **P4,
-            "id": "Id",
+            "charge": "charge",
+        },
+        "Tau": {
+            **P4,
+            "charge": "charge",
+            "idDeepTau2018v2p5VSjet": "DeepTauvsJet",
+            "idDeepTau2018v2p5VSmu": "DeepTauvsMu",
+            "idDeepTau2018v2p5VSe": "DeepTauvsE",
+        },
+        "BoostedTau": {
+            **P4,
+            "charge": "charge",
+            "idMVAnewDM2017v2": "idMVAnewDM2017v2",
         },
         "FatJet": {
             **P4,
@@ -110,11 +129,6 @@ class bbtautauSkimmer(SkimmerABC):
         "dr_leptons": 0.4,
     }
 
-    vbf_veto_lepton_selection = {  # noqa: RUF012
-        "electron_pt": 5,
-        "muon_pt": 7,
-    }
-
     ak4_bjet_selection = {  # noqa: RUF012
         "pt": 25,
         "eta_max": 2.5,
@@ -133,7 +147,7 @@ class bbtautauSkimmer(SkimmerABC):
         xsecs: dict = None,
         save_systematics: bool = False,
         region: str = "signal",
-        nano_version: str = "v12",
+        nano_version: str = "v12_private",
         fatjet_pt_cut: float = None,
     ):
         super().__init__()
@@ -141,80 +155,8 @@ class bbtautauSkimmer(SkimmerABC):
         self.XSECS = xsecs if xsecs is not None else {}  # in pb
 
         # HLT selection
-        HLTs = {
-            "signal": {
-                "2022": [
-                    # jets
-                    "AK8PFJet425_SoftDropMass40",
-                    "AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
-                    "AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30",
-                    "QuadPFJet70_50_40_35_PFBTagParticleNet_2BTagSum0p65",
-                    # particlenetbb + lepton (monitoring paths?)
-                    # "IsoMu50_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetBB0p35",
-                    # "Ele50_CaloIdVT_GsfTrkIdT_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetBB0p35",
-                    # single-tau
-                    "LooseDeepTauPFTauHPS180_L2NN_eta2p1",
-                    # di-tau
-                    # "DoubleMediumDeepTauIsoPFTauHPS30_L2NN_eta2p1_PFJet60",  # monitoring path?
-                    "DoubleMediumDeepTauPFTauHPS35_L2NN_eta2p1",
-                    "DoubleMediumDeepTauPFTauHPS30_L2NN_eta2p1_PFJet60",
-                    "DoubleMediumDeepTauPFTauHPS30_L2NN_eta2p1_PFJet75",
-                    # single-muon
-                    "IsoMu24",
-                    "Mu50",
-                    # mu-tau
-                    "IsoMu20_eta2p1_LooseDeepTauPFTauHPS27_eta2p1_CrossL1",
-                    "IsoMu24_eta2p1_LooseDeepTauPFTauHPS180_eta2p1",
-                    "IsoMu24_eta2p1_LooseDeepTauPFTauHPS30_eta2p1_CrossL1",
-                    "IsoMu24_eta2p1_MediumDeepTauPFTauHPS30_L2NN_eta2p1_CrossL1",
-                    "IsoMu24_eta2p1_MediumDeepTauPFTauHPS35_L2NN_eta2p1_CrossL1",
-                    "IsoMu24_eta2p1_MediumDeepTauPFTauHPS45_L2NN_eta2p1_CrossL1",
-                    "IsoMu20_eta2p1_TightChargedIsoPFTauHPS27_eta2p1_CrossL1",
-                    "IsoMu20_eta2p1_TightChargedIsoPFTauHPS27_eta2p1_TightID_CrossL1",
-                    "IsoMu24_eta2p1_MediumDeepTauPFTauHPS30_L2NN_eta2p1_PFJet60_CrossL1",
-                    "IsoMu24_eta2p1_MediumDeepTauPFTauHPS30_L2NN_eta2p1_PFJet75_CrossL1",
-                    "IsoMu27_MediumDeepTauPFTauHPS20_eta2p1_SingleL1",  # can't find it in Nano!
-                    # single-electron (+ jet)
-                    "Ele30_WPTight_Gsf",
-                    "Ele115_CaloIdVT_GsfTrkIdT",
-                    "Ele50_CaloIdVT_GsfTrkIdT_PFJet165",
-                    "Photon200",
-                    # ele-tau
-                    "Ele24_eta2p1_WPTight_Gsf_LooseDeepTauPFTauHPS30_eta2p1_CrossL1",
-                    "Ele24_eta2p1_WPTight_Gsf_TightChargedIsoPFTauHPS30_eta2p1_CrossL1",
-                    # vbf
-                    "VBF_DoubleMediumDeepTauPFTauHPS20_eta2p1",
-                    # "DoublePFJets40_Mass500_MediumDeepTau45_L2NN_MediumDeepTau20_eta2p1",  # monitoring path?
-                    # "DoublePFJets40_Mass500_MediumDeepTauPFTauHPS45_L2NN_MediumDeepTauPFTauHPS20_eta2p1",  # Tau dataset
-                    "QuadPFJet103_88_75_15_DoublePFBTagDeepJet_1p3_7p7_VBF1",
-                    "QuadPFJet103_88_75_15_PFBTagDeepJet_1p3_VBF2",
-                ],
-                "2022EE": [
-                    "AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
-                    "AK8PFJet425_SoftDropMass40",
-                ],
-                "2023": [
-                    "AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
-                    "AK8PFJet230_SoftDropMass40_PNetBB0p06",
-                    "AK8PFJet230_SoftDropMass40",
-                    "AK8PFJet400_SoftDropMass40",
-                    "AK8PFJet425_SoftDropMass40",
-                    "AK8PFJet400_SoftDropMass40",
-                    "AK8PFJet420_MassSD30",
-                ],
-                "2023BPix": [
-                    "AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
-                    "AK8PFJet230_SoftDropMass40_PNetBB0p06",
-                    "AK8PFJet230_SoftDropMass40",
-                    "AK8PFJet400_SoftDropMass40",
-                    "AK8PFJet425_SoftDropMass40",
-                    "AK8PFJet400_SoftDropMass40",
-                    "AK8PFJet420_MassSD30",
-                ],
-            },
-        }
-
-        self.HLTs = HLTs[region]
+        self.HLTs = {"signal": HLTs.hlt_list(hlt_prefix=False)}
+        self.HLTs = self.HLTs[region]
         self._systematics = save_systematics
         self._nano_version = nano_version
         self._region = region
@@ -250,10 +192,21 @@ class bbtautauSkimmer(SkimmerABC):
             "Xtauhtaue",
             "Xtauhtauh",
             "Xtauhtaum",
+            # Derived variables
             "massResCorr",
             "massVisCorr",
             "massResApplied",
             "massVisApplied",
+            "QCD",
+            "Top",
+            "XbbvsQCD",
+            "XbbvsQCDTop",
+            "XtauhtauevsQCD",
+            "XtauhtauevsQCDTop",
+            "XtauhtaumvsQCD",
+            "XtauhtauevsQCDTop",
+            "XtauhtauhvsQCD",
+            "XtauhtauhvsQCDTop",
         ]
 
         self.skim_vars["FatJet"] = {
@@ -313,9 +266,21 @@ class bbtautauSkimmer(SkimmerABC):
         #########################
         print("starting object selection", f"{time.time() - start:.2f}")
 
-        # # Leptons
-        # veto_muon_sel = veto_muons(events.Muon)
-        # veto_electron_sel = veto_electrons(events.Electron)
+        # Leptons
+        num_leptons = 2
+        electrons, etrigvars = objects.good_electrons(events, events.Electron, year)
+        muons, mtrigvars = objects.good_muons(events, events.Muon, year)
+        taus, ttrigvars = objects.good_taus(events, events.Tau, year)
+        boostedtaus = objects.good_boostedtaus(events, events.boostedTau)
+
+        # These are bools saying if the lepton is matched to a trigger object or not
+        trigMatchVars = {**etrigvars, **mtrigvars, **ttrigvars}
+        for key, val in trigMatchVars.items():
+            trigMatchVars[key] = pad_val(val, num_leptons, False, axis=1).astype(int)
+
+        print("Leptons", f"{time.time() - start:.2f}")
+
+        # TODO: lepton systematics
 
         # AK4 Jets
         num_ak4_jets = 4
@@ -337,9 +302,8 @@ class bbtautauSkimmer(SkimmerABC):
             met = events.MET
 
         print("ak4 JECs", f"{time.time() - start:.2f}")
-        jets_sel = (jets.pt > 15) & (jets.isTight) & (abs(jets.eta) < 4.7)
 
-        jets = jets[jets_sel]
+        jets = objects.good_ak4jets(jets, nano_version=self._nano_version)
         ht = ak.sum(jets.pt, axis=1)
         print("ak4", f"{time.time() - start:.2f}")
 
@@ -359,7 +323,9 @@ class bbtautauSkimmer(SkimmerABC):
         )
         print("ak8 JECs", f"{time.time() - start:.2f}")
 
-        fatjets = objects.good_ak8jets(fatjets, **self.fatjet_selection)
+        fatjets = objects.good_ak8jets(
+            fatjets, **self.fatjet_selection, nano_version=self._nano_version
+        )
 
         # # TODO: VBF objects
         # vbf_jets = objects.vbf_jets(
@@ -409,6 +375,25 @@ class bbtautauSkimmer(SkimmerABC):
             else np.ones(len(events)).astype(bool)
         )
         logging.info(f"Passing gen selection: {np.sum(gen_selected)} / {len(events)}")
+
+        # Lepton variables
+        electronVars = {
+            f"Electron{key}": pad_val(electrons[var], num_leptons, axis=1)
+            for (var, key) in self.skim_vars["Lepton"].items()
+        }
+        muonVars = {
+            f"Muon{key}": pad_val(muons[var], num_leptons, axis=1)
+            for (var, key) in self.skim_vars["Lepton"].items()
+        }
+        tauVars = {
+            f"Tau{key}": pad_val(taus[var], num_leptons, axis=1)
+            for (var, key) in self.skim_vars["Tau"].items()
+        }
+        boostedtauVars = {
+            f"BoostedTau{key}": pad_val(boostedtaus[var], num_leptons, axis=1)
+            for (var, key) in self.skim_vars["BoostedTau"].items()
+        }
+        leptonVars = {**electronVars, **muonVars, **tauVars, **boostedtauVars}
 
         # AK4 Jet variables
         jet_skimvars = self.skim_vars["Jet"]
@@ -479,16 +464,24 @@ class bbtautauSkimmer(SkimmerABC):
         #             label = "" if shift == "" else "_" + shift
         #             bbFatJetVars[f"bbFatJet{key}{label}"] = vals
 
+        # MET
+        metVars = {
+            f"MET{key}": pad_val(met[var], 1, axis=1)
+            for (var, key) in self.skim_vars["MET"].items()
+        }
+
         # Event variables
-        met_pt = met.pt
         eventVars = {
             key: events[val].to_numpy()
             for key, val in self.skim_vars["Event"].items()
             if key in events.fields
         }
-        eventVars["MET_pt"] = met_pt.to_numpy()
         eventVars["ht"] = ht.to_numpy()
-        eventVars["nJets"] = ak.sum(jets_sel, axis=1).to_numpy()
+        eventVars["nElectrons"] = ak.num(electrons).to_numpy()
+        eventVars["nMuons"] = ak.num(muons).to_numpy()
+        eventVars["nTaus"] = ak.num(taus).to_numpy()
+        eventVars["nBoostedTaus"] = ak.num(boostedtaus).to_numpy()
+        eventVars["nJets"] = ak.num(jets).to_numpy()
         eventVars["nFatJets"] = ak.num(fatjets).to_numpy()
         if isData:
             pileupVars = {key: np.ones(len(events)) * PAD_VAL for key in self.skim_vars["Pileup"]}
@@ -498,15 +491,15 @@ class bbtautauSkimmer(SkimmerABC):
 
         # Trigger variables
 
-        zeros = np.zeros(len(events), dtype="bool")
-        HLTVars = {
-            f"HLT_{trigger}": (
-                events.HLT[trigger].to_numpy().astype(int)
-                if trigger in events.HLT.fields
-                else zeros
-            )
-            for trigger in self.HLTs[year]
-        }
+        HLTVars = {}
+        zeros = np.zeros(len(events), dtype="int")
+        for trigger in self.HLTs[year]:
+            if trigger in events.HLT.fields:
+                HLTVars[f"HLT_{trigger}"] = events.HLT[trigger].to_numpy().astype(int)
+            else:
+                logger.warning(f"Missing {trigger}!")
+                HLTVars[f"HLT_{trigger}"] = zeros
+
         print("HLT vars", f"{time.time() - start:.2f}")
 
         # # vbfJets
@@ -530,10 +523,13 @@ class bbtautauSkimmer(SkimmerABC):
             **genVars,
             **eventVars,
             **pileupVars,
+            **trigMatchVars,
             **HLTVars,
             # **ak4JetAwayVars,
-            **ak8FatJetVars,
+            **leptonVars,
             **ak4JetVars,
+            **ak8FatJetVars,
+            **metVars,
             # **bbFatJetVars,
             # **trigObjFatJetVars,
             # **vbfJetVars,
@@ -553,11 +549,6 @@ class bbtautauSkimmer(SkimmerABC):
         # Selection
         ######################
 
-        # OR-ing HLT triggers
-        for trigger in self.HLTs[year]:
-            if trigger not in events.HLT.fields:
-                logger.warning(f"Missing HLT {trigger}!")
-
         HLT_triggered = np.any(
             np.array(
                 [events.HLT[trigger] for trigger in self.HLTs[year] if trigger in events.HLT.fields]
@@ -565,8 +556,8 @@ class bbtautauSkimmer(SkimmerABC):
             axis=0,
         )
 
-        # apply trigger
-        apply_trigger = False  # not applying trigger for now
+        # don't apply triggers for now, for trigger studies etc.
+        apply_trigger = False
         if apply_trigger:
             add_selection("trigger", HLT_triggered, *selection_args)
 
@@ -654,6 +645,7 @@ class bbtautauSkimmer(SkimmerABC):
         logger.info(f"Cutflow:\n{cutflow}")
 
         print("Return ", f"{time.time() - start:.2f}")
+        print("Columns:", print(list(dataframe.columns)))
         return {year: {dataset: {"totals": totals_dict, "cutflow": cutflow}}}
 
     def postprocess(self, accumulator):
