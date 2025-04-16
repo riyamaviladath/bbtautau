@@ -22,6 +22,7 @@ def get_processor(
     save_systematics: bool | None = None,
     region: str | None = None,
     nano_version: str | None = None,
+    fatjet_pt_cut: float | None = None,
 ):
     # define processor
     if processor == "skimmer":
@@ -32,6 +33,7 @@ def get_processor(
             save_systematics=save_systematics,
             region=region,
             nano_version=nano_version,
+            fatjet_pt_cut=fatjet_pt_cut,
         )
 
 
@@ -41,6 +43,7 @@ def main(args):
         args.save_systematics,
         args.region,
         args.nano_version,
+        args.fatjet_pt_cut,
     )
 
     save_parquet = {"skimmer": True}[args.processor]

@@ -62,3 +62,10 @@ def parse_common_run_args(parser):
         choices=["v12_private"],
         help="NanoAOD version",
     )
+
+    parser.add_argument(
+        "--fatjet-pt-cut",
+        type=float,
+        default=None,
+        help="pt cut for fatjets in skimmer",
+    )
