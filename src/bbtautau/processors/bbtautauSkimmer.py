@@ -106,6 +106,7 @@ class bbtautauSkimmer(SkimmerABC):
         },
     }
 
+    # only applied if fatjet_bb_preselection is True
     preselection = {  # noqa: RUF012
         # roughly, 85% signal efficiency, 2% QCD efficiency (pT: 250-400, mSD:0-250, mRegLegacy:40-250)
         "pnet-legacy": 0.8,
@@ -148,6 +149,8 @@ class bbtautauSkimmer(SkimmerABC):
         save_systematics: bool = False,
         region: str = "signal",
         nano_version: str = "v12_private",
+        fatjet_pt_cut: float = None,
+        fatjet_bb_preselection: bool = False,
     ):
         super().__init__()
 
@@ -160,6 +163,7 @@ class bbtautauSkimmer(SkimmerABC):
         self._nano_version = nano_version
         self._region = region
         self._accumulator = processor.dict_accumulator({})
+        self._fatjet_bb_preselection = fatjet_bb_preselection
 
         # JMSR
         self.jmsr_vars = ["msoftdrop", "particleNet_mass_legacy", "ParTmassVis", "ParTmassRes"]
@@ -213,7 +217,13 @@ class bbtautauSkimmer(SkimmerABC):
             **{f"globalParT_{var}": f"ParT{var}" for var in glopart_vars},
         }
 
-        logger.info(f"Running skimmer with systematics {self._systematics}")
+        # update fatjet pT cut
+        if fatjet_pt_cut is not None:
+            self.fatjet_selection["pt"] = fatjet_pt_cut
+
+        logger.info(
+            f"Running skimmer with:\nsystematics {self._systematics}\nregion {self._region}\nfatjet pt cut {self.fatjet_selection['pt']}"
+        )
 
     @property
     def accumulator(self):
@@ -223,8 +233,7 @@ class bbtautauSkimmer(SkimmerABC):
         """Runs event processor for different types of jets"""
 
         start = time.time()
-        print("Starting")
-        print("# events", len(events))
+        logging.info(f"# events {len(events)}")
 
         year = events.metadata["dataset"].split("_")[0]
         dataset = "_".join(events.metadata["dataset"].split("_")[1:])
@@ -258,6 +267,7 @@ class bbtautauSkimmer(SkimmerABC):
         #########################
         # Object definitions
         #########################
+
         print("starting object selection", f"{time.time() - start:.2f}")
 
         # Leptons
@@ -459,10 +469,7 @@ class bbtautauSkimmer(SkimmerABC):
         #             bbFatJetVars[f"bbFatJet{key}{label}"] = vals
 
         # MET
-        metVars = {
-            f"MET{key}": pad_val(met[var], 1, axis=1)
-            for (var, key) in self.skim_vars["MET"].items()
-        }
+        metVars = {f"MET{key}": met[var].to_numpy() for (var, key) in self.skim_vars["MET"].items()}
 
         # Event variables
         eventVars = {
@@ -569,9 +576,12 @@ class bbtautauSkimmer(SkimmerABC):
         # # >=2 AK8 jets passing selections
         # add_selection("ak8_numjets", (ak.num(fatjets) >= 2), *selection_args)
 
-        # >=1 AK8 jets with pT>230 GeV
-        cut_pt = np.sum(ak8FatJetVars["ak8FatJetPt"] >= self.fatjet_selection["pt"], axis=1) >= 1
-        add_selection("ak8_pt", cut_pt, *selection_args)
+        # >=1 AK8 jets with pT cut (230 GeV by default)
+        if self.fatjet_selection["pt"] >= 0:  # if < 0, don't apply any fatjet selection
+            cut_pt = (
+                np.sum(ak8FatJetVars["ak8FatJetPt"] >= self.fatjet_selection["pt"], axis=1) >= 1
+            )
+            add_selection("ak8_pt", cut_pt, *selection_args)
 
         # # >=1 AK8 jets with mSD >= 40 GeV
         # cut_mass = np.sum(ak8FatJetVars["ak8FatJetMsd"] >= 40, axis=1) >= 1
@@ -597,6 +607,17 @@ class bbtautauSkimmer(SkimmerABC):
 
         # VBF veto cut (not now)
         # add_selection("vbf_veto", ~(cut_vbf), *selection_args)
+
+        if self._fatjet_bb_preselection:
+            # at least 1 jet with ParTXbbvsQCD > 0.8
+            cut_bb = (
+                np.sum(
+                    ak8FatJetVars["ak8FatJetParTXbbvsQCD"] >= self.preselection["glopart-v2"],
+                    axis=1,
+                )
+                >= 1
+            )
+            add_selection("ak8_bb_preselection", cut_bb, *selection_args)
 
         print("Selection", f"{time.time() - start:.2f}")
 
@@ -632,6 +653,8 @@ class bbtautauSkimmer(SkimmerABC):
         dataframe = self.to_pandas(skimmed_events)
         fname = events.behavior["__events_factory__"]._partition_key.replace("/", "_") + ".parquet"
         self.dump_table(dataframe, fname)
+
+        logger.info(f"Cutflow:\n{cutflow}")
 
         print("Return ", f"{time.time() - start:.2f}")
         print("Columns:", print(list(dataframe.columns)))
@@ -696,6 +719,7 @@ class bbtautauSkimmer(SkimmerABC):
             weights_dict[f"single_weight_{key}"] = weights.partial_weight([key])
 
         ###################### alpha_S and PDF variations ######################
+
         if ("HHTobbbb" in dataset or "HHto4B" in dataset) or dataset.startswith("TTTo"):
             scale_weights = get_scale_weights(events)
             if scale_weights is not None:
