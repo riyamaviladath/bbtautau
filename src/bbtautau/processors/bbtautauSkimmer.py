@@ -707,6 +707,7 @@ class bbtautauSkimmer(SkimmerABC):
             weights_dict[f"single_weight_{key}"] = weights.partial_weight([key])
 
         ###################### alpha_S and PDF variations ######################
+
         if ("HHTobbbb" in dataset or "HHto4B" in dataset) or dataset.startswith("TTTo"):
             scale_weights = get_scale_weights(events)
             if scale_weights is not None:
