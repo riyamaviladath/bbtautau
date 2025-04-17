@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import plotting
 import Samples
+import utils as putils
 from boostedhh import utils
 from boostedhh.utils import Sample, ShapeVar
 
@@ -30,16 +31,42 @@ base_filters = [
 ]
 
 
-control_plot_vars = [
-    ShapeVar(var="MET_pt", label=r"$p^{miss}_T$ [GeV]", bins=[20, 0, 300]),
-    # ShapeVar(var="MET_phi", label=r"$\phi^{miss}$", bins=[20, -3.2, 3.2]),
-    ShapeVar(var="ak8FatJetPt1", label=r"$p_{T}^{j1}$ [GeV]", bins=[20, 250, 1250]),
-]
+control_plot_vars = (
+    [
+        ShapeVar(var="MET_pt", label=r"$p^{miss}_T$ [GeV]", bins=[20, 0, 300]),
+        # ShapeVar(var="MET_phi", label=r"$\phi^{miss}$", bins=[20, -3.2, 3.2]),
+    ]
+    + [
+        ShapeVar(var=f"ak8FatJetPt{i}", label=rf"$p_T^{{j{i + 1}}}$ [GeV]", bins=[20, 250, 1250])
+        for i in range(3)
+    ]
+    + [
+        ShapeVar(var=f"ak8FatJetMsd{i}", label=rf"$m_{{SD}}^{{j{i + 1}}}$ [GeV]", bins=[20, 0, 300])
+        for i in range(3)
+    ]
+    + [
+        ShapeVar(var=f"ak8FatJetEta{i}", label=rf"$\eta^{{j{i + 1}}}$", bins=[20, -2.5, 2.5])
+        for i in range(3)
+    ]
+    + [
+        ShapeVar(var=f"ak8FatJetPhi{i}", label=rf"$\phi^{{j{i + 1}}}$", bins=[20, -3.2, 3.2])
+        for i in range(3)
+    ]
+    + [
+        ShapeVar(
+            var=f"ak8FatJetPNetmassLegacy{i}",
+            label=rf"PNet Legacy $m_{{reg}}^{{j{i + 1}}}$",
+            bins=[20, 0, 1],
+        )
+        for i in range(3)
+    ]
+)
 
 
 def bb_filters(num_fatjets: int = 3):
     filters = [
-        base_filters + [(f"('ak8FatJetPNetXbbLegacy', '{n}')", ">=", 0.8)]
+        # roughly, 85% signal efficiency, 2% QCD efficiency (pT: 250-400, mSD:0-250, mRegLegacy:40-250)
+        base_filters + [(f"('ak8FatJetPNetXbbLegacy', '{n}')", ">=", 0.3)]
         for n in range(num_fatjets)
     ]
     return filters
@@ -275,6 +302,7 @@ def control_plots(
     weight_key: str = "finalWeight",
     hists: dict = None,
     cutstr: str = "",
+    cutlabel: str = "",
     title: str = None,
     selection: dict[str, np.ndarray] = None,
     sig_scale_dict: dict[str, float] = None,
@@ -312,13 +340,13 @@ def control_plots(
 
     for shape_var in control_plot_vars:
         if shape_var.var not in hists:
-            hists[shape_var.var] = utils.singleVarHist(
-                events_dict, shape_var, weight_key=weight_key, selection=selection
+            hists[shape_var.var] = putils.singleVarHist(
+                events_dict, shape_var, channel, weight_key=weight_key, selection=selection
             )
 
     print(hists)
 
-    ylim = np.max([h.values() for h in hists.values()]) * 1.05 if same_ylim else None
+    ylim = (np.max([h.values() for h in hists.values()]) * 1.05) if same_ylim else None
 
     with (plot_dir / "hists.pkl").open("wb") as f:
         pickle.dump(hists, f)
@@ -332,10 +360,13 @@ def control_plots(
         merger_control_plots = PdfMerger()
 
         for shape_var in control_plot_vars:
+            pylim = np.max(hists[shape_var.var].values()) * 1.4 if ylim is None else ylim
+
             name = f"{plot_dir}/{cutstr}{shape_var.var}{logstr}.pdf"
             plotting.ratioHistPlot(
                 hists[shape_var.var],
                 year,
+                channel,
                 list(sigs.keys()),
                 list(bgs.keys()),
                 name=name,
@@ -343,11 +374,13 @@ def control_plots(
                 sig_scale_dict=sig_scale_dict if not log else None,
                 plot_significance=plot_significance,
                 significance_dir=shape_var.significance_dir,
+                cutlabel=cutlabel,
                 show=show,
                 log=log,
-                ylim=ylim if not log else 1e15,
+                ylim=pylim if not log else 1e15,
                 plot_ratio=plot_ratio,
-                region_label=channel.label,
+                cmslabel="Work in progress",
+                leg_args={"fontsize": 18},
             )
             merger_control_plots.append(name)
 
