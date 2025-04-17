@@ -42,7 +42,7 @@ class HLTs:
         "pfjet": [
             HLT(
                 name="HLT_AK8PFJet420_MassSD30",
-                years=years,
+                years=years_2023 + ["2022EE"],
                 dataset="JetMET",
             ),
             HLT(
@@ -285,3 +285,41 @@ class HLTs:
             raise ValueError(f"Dataset {dataset} not found in HLTs")
 
         return ret_hlts
+
+    @classmethod
+    def hlts_list_by_dtype(
+        cls,
+        year: str,
+        as_str: bool = True,
+        exclude: list[str] = None,
+        hlt_prefix: bool = True,
+        **hlt_kwargs,
+    ) -> list[HLT | str]:
+        """
+        HLTs per year, with optional filters.
+
+        Args:
+            year (str): year to filter by.
+            as_str (bool): if True, return HLT names only. If False, return HLT objects. Defaults to True.
+            hlt_prefix (bool): if True, return HLT names with "HLT_" prefix. If False, return HLT names without "HLT_" prefix. Defaults to True.
+            **hlt_kwargs: additional kwargs to pass to the hlt_list function.
+
+        Returns:
+            dict[str, list[HLT | str]]: format is ``{data: [hlt, ...], signal: [...]}``
+        """
+        return {
+            "signal": [
+                (hlt.get_name(hlt_prefix) if as_str else hlt)
+                for sublist in cls.hlt_dict(year, as_str=False, mc_only=True, **hlt_kwargs).values()
+                if sublist not in exclude
+                for hlt in sublist
+            ],
+            "data": [
+                (hlt.get_name(hlt_prefix) if as_str else hlt)
+                for sublist in cls.hlt_dict(
+                    year, as_str=False, data_only=True, **hlt_kwargs
+                ).values()
+                if sublist not in exclude
+                for hlt in sublist
+            ],
+        }

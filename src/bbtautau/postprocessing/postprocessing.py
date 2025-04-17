@@ -57,13 +57,11 @@ def trigger_filter(
         base_filters += [("('ak8FatJetPNetXbbLegacy', '0')", ">=", 0.95)]
 
     filters_dict = {}
-    for dtype, years in triggers.items():
-        filters_dict[dtype] = {}
-        for year, trigger_list in years.items():
-            filters_dict[dtype][year] = [
-                base_filters + [(f"('{trigger}', '0')", "==", 1)] for trigger in trigger_list
-            ]
-    # print(f"\n\nTrigger filters_dict for data: {filters_dict['data']['2022'][0]}")
+
+    for dtype, trigger_list in triggers.items():
+        filters_dict[dtype] = [
+            base_filters + [(f"('{trigger}', '0')", "==", 1)] for trigger in trigger_list
+        ]
     return filters_dict
 
 
@@ -124,7 +122,7 @@ def load_samples(
     year: str,
     channel: Channel,
     paths: dict[str],
-    filters_dict: dict[str, dict[str, list[list[tuple]]]] = None,
+    filters_dict: dict[str, list[list[tuple]]] = None,
     load_columns: dict[str, list[tuple]] = None,
     load_bgs: bool = False,
     load_just_bbtt: bool = False,
@@ -136,7 +134,9 @@ def load_samples(
 
     if load_just_bbtt:  # quite ad hoc but should become obsolete
         del samples["vbfbbtt-k2v0"]
+        del samples["vbfbbtt"]
         signals.remove("vbfbbtt-k2v0")
+        signals.remove("vbfbbtt")
 
     # remove unnecessary data samples
     for key in Samples.DATASETS + (not load_bgs) * Samples.BGS:
@@ -151,11 +151,13 @@ def load_samples(
     # load samples
     for key, sample in samples.items():
         if isinstance(filters_dict, dict):
-            filters = filters_dict[sample.get_type()][year]
+            filters = filters_dict[sample.get_type()]
         else:
-            filters = filters_dict
+            filters = filters_dict  # this should not be used since the triggers change in data and MC on a given year
 
         if sample.selector is not None:
+
+            print(f"Loading {key} ({sample.label})")
             events_dict[key] = utils.load_sample(
                 sample,
                 year,

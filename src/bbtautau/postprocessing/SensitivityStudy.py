@@ -14,6 +14,8 @@ from matplotlib.lines import Line2D
 from Samples import CHANNELS, qcdouts, topouts
 from sklearn.metrics import roc_curve
 
+from bbtautau.HLTs import HLTs
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("boostedhh.utils")
 logger.setLevel(logging.DEBUG)
@@ -77,8 +79,10 @@ class Analyser:
 
     def load_year(self, year):
 
-        filters_dic = postprocessing.trigger_filter(
-            self.channel.triggers, fast_mode=self.test_mode
+        # This could be improved by adding channel-by-channel granularity
+        # Now filter just requires that any trigger in that year fires
+        filters_dict = postprocessing.trigger_filter(
+            HLTs.hlts_list_by_dtype(year), fast_mode=self.test_mode
         )  # = {"data": [(...)], "signal": [(...)], ...}
         columns = postprocessing.get_columns(year, self.channel)
 
@@ -86,7 +90,7 @@ class Analyser:
             year,
             self.channel,
             data_paths[year],
-            filters_dic=filters_dic,
+            filters_dict=filters_dict,
             load_columns=columns,
             load_just_bbtt=True,
         )
@@ -221,7 +225,7 @@ class Analyser:
 
         return fpr, tpr, thresholds
 
-    def plot_rocs(self, years):
+    def plot_rocs(self, years, test_mode=False):
         if not hasattr(self, "rocs") or "_".join(years) not in self.rocs:
             print(f"No ROC curves computed yet in years {years}")
         for jet, title in zip(["bb", "tautau"], ["bb FatJet", rf"{self.channel.label}$ FatJet"]):
@@ -230,7 +234,7 @@ class Analyser:
                 title=title + "+".join(years),
                 show=True,
                 plot_dir=self.plot_dir,
-                name=f"roc_{jet+'_'.join(years)}",
+                name=f"roc_{jet+'_'.join(years)+test_mode*'_fast'}.pdf",
             )
 
     # here could block and save only data that needs after
@@ -316,7 +320,7 @@ class Analyser:
         # bbeff, tteff = 0.44,0.36 #0.44, 0.36 values determined by highest sig for 1 bkg event
         mbb1, mbb2 = 110.0, 160.0
         mbbw2 = (mbb2 - mbb1) / 2
-        mtt1, mtt2 = 50, 1500
+        mtt1, mtt2 = 50, 150
 
         bbcut = np.linspace(*gridlims, gridsize)
         ttcut = np.linspace(*gridlims, gridsize)
@@ -466,7 +470,7 @@ class Analyser:
                 * np.sqrt(bg_yield)
                 / sig_yield
                 / np.sqrt(
-                    hh_vars.LUMI["2022-2023"] / np.sum([hh_vars.LUMI[year] for year in years]) * 3
+                    hh_vars.LUMI["2022-2023"] / np.sum([hh_vars.LUMI[year] for year in years])
                 )
             )
         else:
@@ -479,7 +483,6 @@ class Analyser:
             / np.sqrt(
                 (124000 + hh_vars.LUMI["2022-2023"])
                 / np.sum([hh_vars.LUMI[year] for year in years])
-                * 3
             )
         )
 
@@ -487,7 +490,7 @@ class Analyser:
             2
             * np.sqrt(bg_yield)
             / sig_yield
-            / np.sqrt((360000) / np.sum([hh_vars.LUMI[year] for year in years]) * 3)
+            / np.sqrt((360000) / np.sum([hh_vars.LUMI[year] for year in years]))
         )
 
         df_out = pd.DataFrame([limits])
@@ -496,8 +499,8 @@ class Analyser:
 
 if __name__ == "__main__":
 
-    years = ["2022"]  # "2022", "2022EE", "2023", "2023BPix"]
-    test_mode = False  # reduces size of data to run all quickly
+    years = ["2022"]  # "2022EE", "2023", "2023BPix"]
+    test_mode = True  # reduces size of data to run all quickly
 
     for c in [
         "hh",
@@ -505,13 +508,13 @@ if __name__ == "__main__":
         "he",
     ]:
         print(f"Channel: {c}")
-        analyser = Analyser(years, c)
+        analyser = Analyser(years, c, test_mode=test_mode)
         for year in years:
             analyser.load_year(year)
 
         analyser.build_tagger_dict()
         analyser.compute_rocs(years)
-        analyser.plot_rocs(years)
+        analyser.plot_rocs(years, test_mode=test_mode)
         print("ROCs computed for channel ", c)
         analyser.prepare_sensitivity(years)
 
