@@ -288,6 +288,31 @@ def delete_columns(
     return events_dict
 
 
+def bbtautau_assignment(events_dict: dict[str, pd.DataFrame], channel: Channel):
+    """Assign bb and tautau jets per each event."""
+    bbtt_masks = {}
+    for sample_key, sample_events in events_dict.items():
+        bbtt_masks[sample_key] = {
+            "bb": np.zeros_like(sample_events["ak8FatJetPt"].to_numpy(), dtype=bool),
+            "tautau": np.zeros_like(sample_events["ak8FatJetPt"].to_numpy(), dtype=bool),
+        }
+
+        # assign tautau jet as the one with the highest ParTtautauvsQCD score
+        tautau_pick = np.argmax(sample_events[f"ak8FatJetParTX{channel.tagger_label}vsQCD"], axis=1)
+
+        # assign bb jet as the one with the highest ParTXbbvsQCD score, but prioritize tautau
+        bb_sorted = np.argsort(sample_events["ak8FatJetParTXbbvsQCD"], axis=1)
+        bb_highest = bb_sorted[:, -1]
+        bb_second_highest = bb_sorted[:, -2]
+        bb_pick = np.where(bb_highest == tautau_pick, bb_second_highest, bb_highest)
+
+        # now convert into boolean masks
+        bbtt_masks[sample_key]["bb"][:, bb_pick] = True
+        bbtt_masks[sample_key]["tautau"][:, tautau_pick] = True
+
+    return bbtt_masks
+
+
 def control_plots(
     events_dict: dict[str, pd.DataFrame],
     channel: Channel,
