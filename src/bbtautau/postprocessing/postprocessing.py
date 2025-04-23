@@ -32,33 +32,37 @@ base_filters = [
 
 
 control_plot_vars = (
+    # [
+    #     ShapeVar(var="MET_pt", label=r"$p^{miss}_T$ [GeV]", bins=[20, 0, 300]),
+    #     # ShapeVar(var="MET_phi", label=r"$\phi^{miss}$", bins=[20, -3.2, 3.2]),
+    # ]
+    # + [
+    #     ShapeVar(var=f"ak8FatJetPt{i}", label=rf"$p_T^{{j{i + 1}}}$ [GeV]", bins=[20, 250, 1250])
+    #     for i in range(3)
+    # ]
+    # + [
+    #     ShapeVar(var=f"ak8FatJetMsd{i}", label=rf"$m_{{SD}}^{{j{i + 1}}}$ [GeV]", bins=[20, 0, 300])
+    #     for i in range(3)
+    # ]
+    # + [
+    #     ShapeVar(var=f"ak8FatJetEta{i}", label=rf"$\eta^{{j{i + 1}}}$", bins=[20, -2.5, 2.5])
+    #     for i in range(3)
+    # ]
+    # + [
+    #     ShapeVar(var=f"ak8FatJetPhi{i}", label=rf"$\phi^{{j{i + 1}}}$", bins=[20, -3.2, 3.2])
+    #     for i in range(3)
+    # ]
+    # + [
+    #     ShapeVar(
+    #         var=f"ak8FatJetPNetmassLegacy{i}",
+    #         label=rf"PNet Legacy $m_{{reg}}^{{j{i + 1}}}$",
+    #         bins=[20, 0, 1],
+    #     )
+    #     for i in range(3)
+    # ]
     [
-        ShapeVar(var="MET_pt", label=r"$p^{miss}_T$ [GeV]", bins=[20, 0, 300]),
-        # ShapeVar(var="MET_phi", label=r"$\phi^{miss}$", bins=[20, -3.2, 3.2]),
-    ]
-    + [
-        ShapeVar(var=f"ak8FatJetPt{i}", label=rf"$p_T^{{j{i + 1}}}$ [GeV]", bins=[20, 250, 1250])
-        for i in range(3)
-    ]
-    + [
-        ShapeVar(var=f"ak8FatJetMsd{i}", label=rf"$m_{{SD}}^{{j{i + 1}}}$ [GeV]", bins=[20, 0, 300])
-        for i in range(3)
-    ]
-    + [
-        ShapeVar(var=f"ak8FatJetEta{i}", label=rf"$\eta^{{j{i + 1}}}$", bins=[20, -2.5, 2.5])
-        for i in range(3)
-    ]
-    + [
-        ShapeVar(var=f"ak8FatJetPhi{i}", label=rf"$\phi^{{j{i + 1}}}$", bins=[20, -3.2, 3.2])
-        for i in range(3)
-    ]
-    + [
-        ShapeVar(
-            var=f"ak8FatJetPNetmassLegacy{i}",
-            label=rf"PNet Legacy $m_{{reg}}^{{j{i + 1}}}$",
-            bins=[20, 0, 1],
-        )
-        for i in range(3)
+        ShapeVar(var=f"{jet}FatJetPt", label=rf"$p_T^{{{jlabel}}}$ [GeV]", bins=[20, 250, 1250])
+        for jet, jlabel in [("bb", "bb"), ("tt", r"$\tau\tau$")]
     ]
 )
 
@@ -299,28 +303,20 @@ def bbtautau_assignment(events_dict: dict[str, pd.DataFrame], channel: Channel):
             "tt": np.zeros_like(sample_events["ak8FatJetPt"].to_numpy(), dtype=bool),
         }
 
-        print("zeros")
         # assign tautau jet as the one with the highest ParTtautauvsQCD score
         tautau_pick = np.argmax(
             sample_events[f"ak8FatJetParTX{channel.tagger_label}vsQCD"].to_numpy(), axis=1
         )
 
-        print("tautau pick")
         # assign bb jet as the one with the highest ParTXbbvsQCD score, but prioritize tautau
         bb_sorted = np.argsort(sample_events["ak8FatJetParTXbbvsQCD"].to_numpy(), axis=1)
         bb_highest = bb_sorted[:, -1]
         bb_second_highest = bb_sorted[:, -2]
-
-        print("sorted")
         bb_pick = np.where(bb_highest == tautau_pick, bb_second_highest, bb_highest)
 
-        print("bb pick")
-        print(bb_pick)
         # now convert into boolean masks
         bbtt_masks[sample_key]["bb"][range(len(bb_pick)), bb_pick] = True
         bbtt_masks[sample_key]["tt"][range(len(tautau_pick)), tautau_pick] = True
-
-        print("bbtt masks")
 
     return bbtt_masks
 
@@ -328,12 +324,12 @@ def bbtautau_assignment(events_dict: dict[str, pd.DataFrame], channel: Channel):
 def control_plots(
     events_dict: dict[str, pd.DataFrame],
     channel: Channel,
-    bbtt_masks: dict[str, pd.DataFrame],
     sigs: dict[str, Sample],
     bgs: dict[str, Sample],
     control_plot_vars: list[ShapeVar],
     plot_dir: Path,
     year: str,
+    bbtt_masks: dict[str, pd.DataFrame] = None,
     weight_key: str = "finalWeight",
     hists: dict = None,
     cutstr: str = "",
