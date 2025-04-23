@@ -154,6 +154,7 @@ def load_samples(
     filters_dict: dict[str, dict[str, list[list[tuple]]]] = None,
     load_columns: dict[str, list[tuple]] = None,
     load_bgs: bool = False,
+    load_data: bool = True,
     load_just_bbtt: bool = False,
 ):
     events_dict = {}
@@ -167,7 +168,7 @@ def load_samples(
 
     # remove unnecessary data samples
     for key in Samples.DATASETS + (not load_bgs) * Samples.BGS:
-        if (key in samples) and (key not in channel.data_samples):
+        if (key in samples) and (key not in channel.data_samples or not load_data):
             del samples[key]
 
     # load only the specified columns
@@ -292,23 +293,34 @@ def bbtautau_assignment(events_dict: dict[str, pd.DataFrame], channel: Channel):
     """Assign bb and tautau jets per each event."""
     bbtt_masks = {}
     for sample_key, sample_events in events_dict.items():
+        print(sample_key)
         bbtt_masks[sample_key] = {
             "bb": np.zeros_like(sample_events["ak8FatJetPt"].to_numpy(), dtype=bool),
-            "tautau": np.zeros_like(sample_events["ak8FatJetPt"].to_numpy(), dtype=bool),
+            "tt": np.zeros_like(sample_events["ak8FatJetPt"].to_numpy(), dtype=bool),
         }
 
+        print("zeros")
         # assign tautau jet as the one with the highest ParTtautauvsQCD score
-        tautau_pick = np.argmax(sample_events[f"ak8FatJetParTX{channel.tagger_label}vsQCD"], axis=1)
+        tautau_pick = np.argmax(
+            sample_events[f"ak8FatJetParTX{channel.tagger_label}vsQCD"].to_numpy(), axis=1
+        )
 
+        print("tautau pick")
         # assign bb jet as the one with the highest ParTXbbvsQCD score, but prioritize tautau
-        bb_sorted = np.argsort(sample_events["ak8FatJetParTXbbvsQCD"], axis=1)
+        bb_sorted = np.argsort(sample_events["ak8FatJetParTXbbvsQCD"].to_numpy(), axis=1)
         bb_highest = bb_sorted[:, -1]
         bb_second_highest = bb_sorted[:, -2]
+
+        print("sorted")
         bb_pick = np.where(bb_highest == tautau_pick, bb_second_highest, bb_highest)
 
+        print("bb pick")
+        print(bb_pick)
         # now convert into boolean masks
-        bbtt_masks[sample_key]["bb"][:, bb_pick] = True
-        bbtt_masks[sample_key]["tautau"][:, tautau_pick] = True
+        bbtt_masks[sample_key]["bb"][range(len(bb_pick)), bb_pick] = True
+        bbtt_masks[sample_key]["tt"][range(len(tautau_pick)), tautau_pick] = True
+
+        print("bbtt masks")
 
     return bbtt_masks
 
@@ -316,7 +328,7 @@ def bbtautau_assignment(events_dict: dict[str, pd.DataFrame], channel: Channel):
 def control_plots(
     events_dict: dict[str, pd.DataFrame],
     channel: Channel,
-    # bb_masks: dict[str, pd.DataFrame],
+    bbtt_masks: dict[str, pd.DataFrame],
     sigs: dict[str, Sample],
     bgs: dict[str, Sample],
     control_plot_vars: list[ShapeVar],
@@ -364,7 +376,12 @@ def control_plots(
     for shape_var in control_plot_vars:
         if shape_var.var not in hists:
             hists[shape_var.var] = putils.singleVarHist(
-                events_dict, shape_var, channel, weight_key=weight_key, selection=selection
+                events_dict,
+                bbtt_masks,
+                shape_var,
+                channel,
+                weight_key=weight_key,
+                selection=selection,
             )
 
     print(hists)
