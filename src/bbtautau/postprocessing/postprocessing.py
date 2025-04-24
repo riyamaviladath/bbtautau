@@ -110,13 +110,13 @@ control_plot_vars = (
         for i in range(3)
     ]
     #  nElectrons
-    + [ShapeVar(var="nElectrons", label=r"Number of Electrons", bins=[3, 0, 2])]
+    + [ShapeVar(var="nElectrons", label=r"Number of Electrons", bins=[3, 0, 3])]
     #  nMuons
-    + [ShapeVar(var="nMuons", label=r"Number of Muons", bins=[3, 0, 2])]
+    + [ShapeVar(var="nMuons", label=r"Number of Muons", bins=[3, 0, 3])]
     #  nTaus
-    + [ShapeVar(var="nTaus", label=r"Number of Taus", bins=[3, 0, 2])]
+    + [ShapeVar(var="nTaus", label=r"Number of Taus", bins=[3, 0, 3])]
     #  nBoostedTaus
-    + [ShapeVar(var="nBoostedTaus", label=r"Number of Boosted Taus", bins=[3, 0, 2])]
+    + [ShapeVar(var="nBoostedTaus", label=r"Number of Boosted Taus", bins=[3, 0, 3])]
 )
 
 
