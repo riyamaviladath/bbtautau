@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import plotting
 import Samples
+import utils as putils
 from boostedhh import utils
 from boostedhh.utils import Sample, ShapeVar
 
@@ -30,16 +31,97 @@ base_filters = [
 ]
 
 
-control_plot_vars = [
-    ShapeVar(var="MET_pt", label=r"$p^{miss}_T$ [GeV]", bins=[20, 0, 300]),
-    # ShapeVar(var="MET_phi", label=r"$\phi^{miss}$", bins=[20, -3.2, 3.2]),
-    ShapeVar(var="ak8FatJetPt1", label=r"$p_{T}^{j1}$ [GeV]", bins=[20, 250, 1250]),
-]
+control_plot_vars = (
+    [
+        ShapeVar(var=f"{jet}FatJetPt", label=rf"$p_T^{{{jlabel}}}$ [GeV]", bins=[20, 250, 1250])
+        for jet, jlabel in [("bb", "bb"), ("tt", r"\tau\tau")]
+    ]
+    + [
+        ShapeVar(var="METPt", label=r"$p^{miss}_T$ [GeV]", bins=[20, 0, 300]), # METPt is used for resel samples
+        # ShapeVar(var="MET_phi", label=r"$\phi^{miss}$", bins=[20, -3.2, 3.2]),
+    ]
+    + [
+        ShapeVar(var=f"ak8FatJetPt{i}", label=rf"$p_T^{{j{i + 1}}}$ [GeV]", bins=[20, 250, 1250])
+        for i in range(3)
+    ]
+    + [
+        ShapeVar(var=f"ak8FatJetMsd{i}", label=rf"$m_{{SD}}^{{j{i + 1}}}$ [GeV]", bins=[20, 0, 300])
+        for i in range(3)
+    ]
+    + [
+        ShapeVar(var=f"ak8FatJetEta{i}", label=rf"$\eta^{{j{i + 1}}}$", bins=[20, -2.5, 2.5])
+        for i in range(3)
+    ]
+    + [
+        ShapeVar(var=f"ak8FatJetPhi{i}", label=rf"$\phi^{{j{i + 1}}}$", bins=[20, -3.2, 3.2])
+        for i in range(3)
+    ]
+    + [
+        ShapeVar(
+            var=f"ak8FatJetPNetmassLegacy{i}",
+            label=rf"PNet Legacy $m_{{reg}}^{{j{i + 1}}}$",
+            bins=[20, 50, 300],
+        )
+        for i in range(3)
+    ]
+    + [
+        ShapeVar(
+            var=f"ak8FatJetParTmassResApplied{i}",
+            label=rf"ParT Resonance $m_{{reg}}^{{j{i + 1}}}$",
+            bins=[20, 50, 300],
+        )
+        for i in range(3)
+    ]
+    + [
+        ShapeVar(
+            var=f"ak8FatJetParTmassVisApplied{i}",
+            label=rf"ParT Visable $m_{{reg}}^{{j{i + 1}}}$",
+            bins=[20, 50, 300],
+        )
+        for i in range(3)
+    ]
+    # ak8FatJetParTXbbvsQCD
+    + [
+        ShapeVar(
+            var=f"ak8FatJetParTXbbvsQCD{i}",
+            label=r"ParT XbbvsQCD$",
+            bins=[20, 0, 1],
+        )
+        for i in range(3)
+    ]
+    # ak8FatJetParTXbbvsQCDTop
+    + [
+        ShapeVar(
+            var=f"ak8FatJetParTXbbvsQCDTop{i}",
+            label=r"ParT XbbvsQCDTop$",
+            bins=[20, 0, 1],
+        )
+        for i in range(3)
+    ]
+    # ak8FatJetPNetXbbvsQCDLegacy
+    + [
+        ShapeVar(
+            var=f"ak8FatJetPNetXbbvsQCDLegacy{i}",
+            label=r"PNet Legacy XbbvsQCD$",
+            bins=[20, 0, 1],
+        )
+        for i in range(3)
+    ]
+    #  nElectrons
+    + [ShapeVar(var="nElectrons", label=r"Number of Electrons", bins=[3, 0, 2])]
+    #  nMuons
+    + [ShapeVar(var="nMuons", label=r"Number of Muons", bins=[3, 0, 2])]
+    #  nTaus
+    + [ShapeVar(var="nTaus", label=r"Number of Taus", bins=[3, 0, 2])]
+    #  nBoostedTaus
+    + [ShapeVar(var="nBoostedTaus", label=r"Number of Boosted Taus", bins=[3, 0, 2])]
+)
 
 
 def bb_filters(num_fatjets: int = 3):
     filters = [
-        base_filters + [(f"('ak8FatJetPNetXbbLegacy', '{n}')", ">=", 0.8)]
+        # roughly, 85% signal efficiency, 2% QCD efficiency (pT: 250-400, mSD:0-250, mRegLegacy:40-250)
+        base_filters + [(f"('ak8FatJetPNetXbbLegacy', '{n}')", ">=", 0.3)]
         for n in range(num_fatjets)
     ]
     return filters
@@ -127,6 +209,7 @@ def load_samples(
     filters_dict: dict[str, dict[str, list[list[tuple]]]] = None,
     load_columns: dict[str, list[tuple]] = None,
     load_bgs: bool = False,
+    load_data: bool = True,
     load_just_bbtt: bool = False,
 ):
     events_dict = {}
@@ -140,7 +223,7 @@ def load_samples(
 
     # remove unnecessary data samples
     for key in Samples.DATASETS + (not load_bgs) * Samples.BGS:
-        if (key in samples) and (key not in channel.data_samples):
+        if (key in samples) and (key not in channel.data_samples or not load_data):
             del samples[key]
 
     # load only the specified columns
@@ -167,7 +250,7 @@ def load_samples(
     for signal in signals:
         # quick fix due to old naming still in samples
         events_dict[f"{signal}{channel.key}"] = events_dict[signal][
-            events_dict[signal][f"GenTau{channel.key}" + "u" * (channel.key == "hm")][0]
+            events_dict[signal][f"GenTau{channel.key}"][0]
         ]
         del events_dict[signal]
 
@@ -261,18 +344,47 @@ def delete_columns(
     return events_dict
 
 
+def bbtautau_assignment(events_dict: dict[str, pd.DataFrame], channel: Channel):
+    """Assign bb and tautau jets per each event."""
+    bbtt_masks = {}
+    for sample_key, sample_events in events_dict.items():
+        print(sample_key)
+        bbtt_masks[sample_key] = {
+            "bb": np.zeros_like(sample_events["ak8FatJetPt"].to_numpy(), dtype=bool),
+            "tt": np.zeros_like(sample_events["ak8FatJetPt"].to_numpy(), dtype=bool),
+        }
+
+        # assign tautau jet as the one with the highest ParTtautauvsQCD score
+        tautau_pick = np.argmax(
+            sample_events[f"ak8FatJetParTX{channel.tagger_label}vsQCD"].to_numpy(), axis=1
+        )
+
+        # assign bb jet as the one with the highest ParTXbbvsQCD score, but prioritize tautau
+        bb_sorted = np.argsort(sample_events["ak8FatJetParTXbbvsQCD"].to_numpy(), axis=1)
+        bb_highest = bb_sorted[:, -1]
+        bb_second_highest = bb_sorted[:, -2]
+        bb_pick = np.where(bb_highest == tautau_pick, bb_second_highest, bb_highest)
+
+        # now convert into boolean masks
+        bbtt_masks[sample_key]["bb"][range(len(bb_pick)), bb_pick] = True
+        bbtt_masks[sample_key]["tt"][range(len(tautau_pick)), tautau_pick] = True
+
+    return bbtt_masks
+
+
 def control_plots(
     events_dict: dict[str, pd.DataFrame],
     channel: Channel,
-    # bb_masks: dict[str, pd.DataFrame],
     sigs: dict[str, Sample],
     bgs: dict[str, Sample],
     control_plot_vars: list[ShapeVar],
     plot_dir: Path,
     year: str,
+    bbtt_masks: dict[str, pd.DataFrame] = None,
     weight_key: str = "finalWeight",
     hists: dict = None,
     cutstr: str = "",
+    cutlabel: str = "",
     title: str = None,
     selection: dict[str, np.ndarray] = None,
     sig_scale_dict: dict[str, float] = None,
@@ -310,13 +422,18 @@ def control_plots(
 
     for shape_var in control_plot_vars:
         if shape_var.var not in hists:
-            hists[shape_var.var] = utils.singleVarHist(
-                events_dict, shape_var, weight_key=weight_key, selection=selection
+            hists[shape_var.var] = putils.singleVarHist(
+                events_dict,
+                bbtt_masks,
+                shape_var,
+                channel,
+                weight_key=weight_key,
+                selection=selection,
             )
 
     print(hists)
 
-    ylim = np.max([h.values() for h in hists.values()]) * 1.05 if same_ylim else None
+    ylim = (np.max([h.values() for h in hists.values()]) * 1.05) if same_ylim else None
 
     with (plot_dir / "hists.pkl").open("wb") as f:
         pickle.dump(hists, f)
@@ -330,10 +447,13 @@ def control_plots(
         merger_control_plots = PdfMerger()
 
         for shape_var in control_plot_vars:
+            pylim = np.max(hists[shape_var.var].values()) * 1.4 if ylim is None else ylim
+
             name = f"{plot_dir}/{cutstr}{shape_var.var}{logstr}.pdf"
             plotting.ratioHistPlot(
                 hists[shape_var.var],
                 year,
+                channel,
                 list(sigs.keys()),
                 list(bgs.keys()),
                 name=name,
@@ -341,11 +461,13 @@ def control_plots(
                 sig_scale_dict=sig_scale_dict if not log else None,
                 plot_significance=plot_significance,
                 significance_dir=shape_var.significance_dir,
+                cutlabel=cutlabel,
                 show=show,
                 log=log,
-                ylim=ylim if not log else 1e15,
+                ylim=pylim if not log else 1e15,
                 plot_ratio=plot_ratio,
-                region_label=channel.label,
+                cmslabel="Work in progress",
+                leg_args={"fontsize": 18},
             )
             merger_control_plots.append(name)
 

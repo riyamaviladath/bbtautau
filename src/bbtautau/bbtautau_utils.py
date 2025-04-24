@@ -18,6 +18,7 @@ class Channel:
     data_samples: list[str]  # datasets for this channel
     hlt_types: list[str]  # list of HLT types
     isLepton: bool  # lepton channel or fully hadronic
+    tagger_label: str  # label for tagger score used
     lepton_dataset: str = None  # lepton dataset (if applicable)
 
     def triggers(
