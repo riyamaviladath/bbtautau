@@ -86,7 +86,7 @@ control_plot_vars = (
     + [
         ShapeVar(
             var=f"ak8FatJetParTXbbvsQCD{i}",
-            label=r"ParT XbbvsQCD$",
+            label=rf"ParT XbbvsQCD j{i+1}",
             bins=[20, 0, 1],
         )
         for i in range(3)
@@ -95,7 +95,7 @@ control_plot_vars = (
     + [
         ShapeVar(
             var=f"ak8FatJetParTXbbvsQCDTop{i}",
-            label=r"ParT XbbvsQCDTop$",
+            label=rf"ParT XbbvsQCDTop j{i+1}",
             bins=[20, 0, 1],
         )
         for i in range(3)
@@ -104,7 +104,7 @@ control_plot_vars = (
     + [
         ShapeVar(
             var=f"ak8FatJetPNetXbbvsQCDLegacy{i}",
-            label=r"PNet Legacy XbbvsQCD$",
+            label=rf"PNet Legacy XbbvsQCD j{i+1}",
             bins=[20, 0, 1],
         )
         for i in range(3)
