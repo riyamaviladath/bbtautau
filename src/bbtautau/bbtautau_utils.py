@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from boostedhh.utils import add_bool_arg
+
 from bbtautau.HLTs import HLTs
 
 
@@ -72,4 +74,8 @@ def parse_common_run_args(parser):
         type=float,
         default=None,
         help="pt cut for fatjets in skimmer",
+    )
+
+    add_bool_arg(
+        parser, "fatjet-bb-preselection", default=False, help="apply bb preselection to fatjets"
     )

@@ -106,6 +106,7 @@ class bbtautauSkimmer(SkimmerABC):
         },
     }
 
+    # only applied if fatjet_bb_preselection is True
     preselection = {  # noqa: RUF012
         # roughly, 85% signal efficiency, 2% QCD efficiency (pT: 250-400, mSD:0-250, mRegLegacy:40-250)
         "pnet-legacy": 0.8,
@@ -149,6 +150,7 @@ class bbtautauSkimmer(SkimmerABC):
         region: str = "signal",
         nano_version: str = "v12_private",
         fatjet_pt_cut: float = None,
+        fatjet_bb_preselection: bool = False,
     ):
         super().__init__()
 
@@ -161,6 +163,7 @@ class bbtautauSkimmer(SkimmerABC):
         self._nano_version = nano_version
         self._region = region
         self._accumulator = processor.dict_accumulator({})
+        self._fatjet_bb_preselection = fatjet_bb_preselection
 
         # JMSR
         self.jmsr_vars = ["msoftdrop", "particleNet_mass_legacy", "ParTmassVis", "ParTmassRes"]
@@ -264,6 +267,7 @@ class bbtautauSkimmer(SkimmerABC):
         #########################
         # Object definitions
         #########################
+
         print("starting object selection", f"{time.time() - start:.2f}")
 
         # Leptons
@@ -465,10 +469,7 @@ class bbtautauSkimmer(SkimmerABC):
         #             bbFatJetVars[f"bbFatJet{key}{label}"] = vals
 
         # MET
-        metVars = {
-            f"MET{key}": pad_val(met[var], 1, axis=1)
-            for (var, key) in self.skim_vars["MET"].items()
-        }
+        metVars = {f"MET{key}": met[var].to_numpy() for (var, key) in self.skim_vars["MET"].items()}
 
         # Event variables
         eventVars = {
@@ -606,6 +607,17 @@ class bbtautauSkimmer(SkimmerABC):
 
         # VBF veto cut (not now)
         # add_selection("vbf_veto", ~(cut_vbf), *selection_args)
+
+        if self._fatjet_bb_preselection:
+            # at least 1 jet with ParTXbbvsQCD > 0.8
+            cut_bb = (
+                np.sum(
+                    ak8FatJetVars["ak8FatJetParTXbbvsQCD"] >= self.preselection["glopart-v2"],
+                    axis=1,
+                )
+                >= 1
+            )
+            add_selection("ak8_bb_preselection", cut_bb, *selection_args)
 
         print("Selection", f"{time.time() - start:.2f}")
 

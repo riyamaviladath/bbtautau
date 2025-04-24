@@ -45,6 +45,11 @@ def main(args):
     processor_args = f"--region {args.region}"
     if args.fatjet_pt_cut is not None:
         processor_args += f" --fatjet-pt-cut {args.fatjet_pt_cut}"
+    processor_args += (
+        " --fatjet-bb-preselection"
+        if args.fatjet_bb_preselection
+        else " --no-fatjet-bb-preselection"
+    )
     submit_utils.submit(args, proxy, t2_prefixes, outdir, local_dir, fileset, processor_args)
 
 
