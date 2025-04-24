@@ -27,7 +27,7 @@ class HLTs:
                 data_years=years_2022 + ["2023"],
                 dataset="JetMET",
             ),
-            # 2023 after 6fb-1
+            # 2023 after 6fb-1, that is from Run2023C_0v2 to Run2023C_0v3
             HLT(
                 name="HLT_AK8PFJet230_SoftDropMass40_PNetBB0p06",
                 years=years_2023,
@@ -42,7 +42,7 @@ class HLTs:
         "pfjet": [
             HLT(
                 name="HLT_AK8PFJet420_MassSD30",
-                years=years_2023 + ["2022EE"],
+                years=years_2023,
                 dataset="JetMET",
             ),
             HLT(
@@ -57,7 +57,13 @@ class HLTs:
             HLT(
                 name="HLT_QuadPFJet70_50_40_35_PFBTagParticleNet_2BTagSum0p65",
                 mc_years=years_2022,
-                data_years=years_2022 + ["2023"],
+                data_years=years_2022,
+                dataset="JetMET",
+            ),
+            HLT(
+                name="HLT_QuadPFJet70_50_40_35_PNet2BTagMean0p65",
+                mc_years=[],
+                data_years=["2023"],
                 dataset="JetMET",
             ),
             # 2022 + 2023
@@ -148,18 +154,18 @@ class HLTs:
                 dataset="EGamma",
             ),
         ],
-        "met": [
-            HLT(
-                name="HLT_PFMET120_PFMHT120_IDTight",
-                years=years,
-                dataset="JetMET",
-            ),
-        ],
+        # "met": [
+        #     HLT(
+        #         name="HLT_PFMET120_PFMHT120_IDTight",
+        #         years=years,
+        #         dataset="JetMET",
+        #     ),
+        # ],
         "parking": [
             # Moved to Parking in 2023 after 6fb-1
             HLT(
                 name="HLT_PFHT280_QuadPFJet30_PNet2BTagMean0p55",
-                years=years_2023,
+                years=["2023BPix"],
                 dataset="ParkingHH",
             ),
             HLT(
@@ -291,7 +297,6 @@ class HLTs:
         cls,
         year: str,
         as_str: bool = True,
-        exclude: list[str] = None,
         hlt_prefix: bool = True,
         **hlt_kwargs,
     ) -> list[HLT | str]:
@@ -311,7 +316,6 @@ class HLTs:
             "signal": [
                 (hlt.get_name(hlt_prefix) if as_str else hlt)
                 for sublist in cls.hlt_dict(year, as_str=False, mc_only=True, **hlt_kwargs).values()
-                if sublist not in exclude
                 for hlt in sublist
             ],
             "data": [
@@ -319,7 +323,6 @@ class HLTs:
                 for sublist in cls.hlt_dict(
                     year, as_str=False, data_only=True, **hlt_kwargs
                 ).values()
-                if sublist not in exclude
                 for hlt in sublist
             ],
         }

@@ -82,8 +82,9 @@ class Analyser:
         # This could be improved by adding channel-by-channel granularity
         # Now filter just requires that any trigger in that year fires
         filters_dict = postprocessing.trigger_filter(
-            HLTs.hlts_list_by_dtype(year), fast_mode=self.test_mode
+            HLTs.hlts_list_by_dtype(year), year, fast_mode=self.test_mode, PNetXbb_cut=0.8
         )  # = {"data": [(...)], "signal": [(...)], ...}
+
         columns = postprocessing.get_columns(year, self.channel)
 
         self.events_dict[year] = postprocessing.load_samples(
@@ -228,23 +229,131 @@ class Analyser:
     def plot_rocs(self, years, test_mode=False):
         if not hasattr(self, "rocs") or "_".join(years) not in self.rocs:
             print(f"No ROC curves computed yet in years {years}")
-        for jet, title in zip(["bb", "tautau"], ["bb FatJet", rf"{self.channel.label}$ FatJet"]):
-            plotting.multiROCCurveGrey(
-                {"": self.rocs["_".join(years)][jet]},
-                title=title + "+".join(years),
+        for jet, title in zip(["bb", "tautau"], ["bb FatJet", rf"{self.channel.label} FatJet"]):
+
+            # Choose which curves to plot
+            if jet == "bb":
+                list_disc = ["XbbvsQCD", "XbbvsQCDTop", "PNetXbbvsQCD"]
+            else:
+                list_disc = [f"{self.taukey}vsQCD", f"{self.taukey}vsQCDTop"]
+
+            plotting.multiROCCurve(
+                {"": {k: self.rocs["_".join(years)][jet][k] for k in list_disc}},
+                title=title,
+                thresholds=[0.3, 0.5, 0.8, 0.9, 0.99, 0.998],
                 show=True,
                 plot_dir=self.plot_dir,
-                name=f"roc_{jet+'_'.join(years)+test_mode*'_fast'}.pdf",
+                lumi=f"{np.sum([hh_vars.LUMI[year] for year in years]) / 1000:.1f}",
+                year="2022-23" if len(years) == 4 else "+".join(years),
+                name=f"roc_{jet+'_'.join(years)+test_mode*'_fast'}",
             )
 
-    # here could block and save only data that needs after
+    def plot_mass(self, years, test_mode=False):
+        for key, label in zip(["hhbbtt", "data"], ["HHbbtt", "Data"]):
+            print(f"Plotting mass for {label}")
+            if key == "hhbbtt":
+                events = pd.concat([self.events_dict[year][self.sig_key] for year in years])
+            else:
+                events = pd.concat(
+                    [
+                        self.events_dict[year][dkey]
+                        for dkey in self.channel.data_samples
+                        for year in years
+                    ]
+                )
+
+            bins = np.linspace(0, 250, 50)
+
+            fig, axs = plt.subplots(1, 2, figsize=(24, 10))
+
+            for i, (jet, jlabel) in enumerate(
+                zip(["bb", "tautau"], ["bb FatJet", rf"{self.channel.label} FatJet"])
+            ):
+                ax = axs[i]
+                if key == "hhbbtt":
+                    mask = np.concatenate(
+                        [self.taggers_dict[year][self.sig_key][f"{jet}_mask"] for year in years],
+                        axis=0,
+                    )
+                else:
+                    mask = np.concatenate(
+                        [
+                            self.taggers_dict[year][dkey][f"{jet}_mask"]
+                            for dkey in self.channel.data_samples
+                            for year in years
+                        ],
+                        axis=0,
+                    )
+
+                for j, (mkey, mlabel) in enumerate(
+                    zip(
+                        [
+                            "ak8FatJetMsd",
+                            "ak8FatJetPNetmassLegacy",
+                            "ak8FatJetParTmassResApplied",
+                            "ak8FatJetParTmassVisApplied",
+                        ],
+                        ["SoftDrop", "PNetLegacy", "ParT Res", "ParT Vis"],
+                    )
+                ):
+                    ax.hist(
+                        self.get_jet_vals(events[mkey], mask),
+                        bins=bins,
+                        histtype="step",
+                        weights=events["finalWeight"],
+                        label=mlabel,
+                        linewidth=2,
+                        color=plt.cm.tab10.colors[j],
+                    )
+
+                ax.vlines(125, 0, ax.get_ylim()[1], linestyle="--", color="k", alpha=0.1)
+                # ax.set_title(jlabel, fontsize=24)
+                ax.set_xlabel("Mass [GeV]")
+                ax.set_ylabel("Events")
+                ax.legend()
+                ax.set_ylim(0)
+                hep.cms.label(
+                    ax=ax,
+                    label="Preliminary",
+                    data=key == "data",
+                    year="2022-23" if len(years) == 4 else "+".join(years),
+                    com="13.6",
+                    fontsize=20,
+                    lumi=f"{np.sum([hh_vars.LUMI[year] for year in years]) / 1000:.1f}",
+                )
+
+                ax.text(
+                    0.03,
+                    0.92,
+                    jlabel,
+                    transform=ax.transAxes,
+                    fontsize=24,
+                    # fontproperties="Tex Gyre Heros:bold",
+                )
+
+            plt.savefig(
+                self.plot_dir / f"mass_{key+'_'+jet+'_'.join(years)+test_mode*'_fast'}.png",
+                bbox_inches="tight",
+            )
+            plt.savefig(
+                self.plot_dir / f"mass_{key+'_'+jet+'_'.join(years)+test_mode*'_fast'}.pdf",
+                bbox_inches="tight",
+            )
 
     def prepare_sensitivity(self, years):
         if set(years) != set(self.years):
             raise ValueError(f"Years {years} not in {self.years}")
 
         mbbk = "ParTmassResApplied"
-        mttk = "ParTmassResApplied"
+        mttk = {"hh": "PNetmassLegacy", "hm": "ParTmassResApplied", "he": "ParTmassResApplied"}[
+            self.channel.key
+        ]
+
+        """
+        for tautau mass regression:
+            -for hh use pnetlegacy
+            -leptons : part Res
+        """
 
         self.txbbs = {year: {} for year in years}
         self.txtts = {year: {} for year in years}
@@ -317,10 +426,16 @@ class Analyser:
         Will have to improve definition of global params
         """
 
-        # bbeff, tteff = 0.44,0.36 #0.44, 0.36 values determined by highest sig for 1 bkg event
+        # txbbcut=rocs[year]["bb"]["XbbvsQCD"]["thresholds"][
+        #     plotting._find_nearest(rocs[years[0]]["bb"]["XbbvsQCD"]["tpr"], bbeff)
+        # ],
+        # txttcut=rocs[year]["tautau"][f"{taukey}vsQCDTop"]["thresholds"][
+        #     plotting._find_nearest(rocs[years[0]]["tautau"][f"{taukey}vsQCDTop"]["tpr"], tteff)
+        # ],
+
         mbb1, mbb2 = 110.0, 160.0
         mbbw2 = (mbb2 - mbb1) / 2
-        mtt1, mtt2 = 50, 150
+        mtt1, mtt2 = {"hh": (50, 150), "hm": (70, 210), "he": (70, 210)}[self.channel.key]
 
         bbcut = np.linspace(*gridlims, gridsize)
         ttcut = np.linspace(*gridlims, gridsize)
@@ -377,12 +492,15 @@ class Analyser:
         # bbeff = rocs[year]["bb"]["XbbvsQCD"]["tpr"][
 
         if plot:
-            fig, ax = plt.subplots(figsize=(8, 8))
+            plt.rcdefaults()
+            plt.style.use(hep.style.CMS)
+            hep.style.use("CMS")
+            fig, ax = plt.subplots(figsize=(10, 10))
             hep.cms.label(
                 ax=ax,
                 label="Work in Progress",
                 data=True,
-                year="+".join(years),
+                year="2022-23" if len(years) == 4 else "+".join(years),
                 com="13.6",
                 fontsize=13,
                 lumi=f"{np.sum([hh_vars.LUMI[year] for year in years]) / 1000:.1f}",
@@ -391,19 +509,26 @@ class Analyser:
             ax.contour(BBcut, TTcut, sel, colors="r")
             proxy = Line2D([0], [0], color="r", label="B=1" if B == 1 else f"B in [1,{B}]")
             ax.scatter(bbcut_opt, ttcut_opt, color="r", label="Max. signal cut")
-            # ax.scatter(bbcut_opt_significance, ttcut_opt_significance, color="b", label="Max. significance cut")
+            ax.scatter(
+                bbcut_opt_significance,
+                ttcut_opt_significance,
+                color="b",
+                label="Global Max. $s/\sqrt{b}$ cut",
+            )
             ax.set_xlabel("Xbb vs QCD cut")
-            ax.set_ylabel("Xtauhtauh vs QCD cut")
+            ax.set_ylabel("Xtauhtauh vs QCDTop cut")
             cbar = plt.colorbar(sigmap, ax=ax)
             cbar.set_label("Signal efficiency" if normalize_sig else "Signal yield")
             handles, labels = ax.get_legend_handles_labels()
             handles.append(proxy)
             ax.legend(handles=handles, loc="lower left")
             plt.savefig(
-                self.plot_dir / f"sig_bkg_opt_{'_'.join(years)}_B={B}.pdf", bbox_inches="tight"
+                self.plot_dir / f"sig_bkg_opt_{'_'.join(years)}_B={B}_better_mass_cut.pdf",
+                bbox_inches="tight",
             )
             plt.savefig(
-                self.plot_dir / f"sig_bkg_opt_{'_'.join(years)}_B={B}.png", bbox_inches="tight"
+                self.plot_dir / f"sig_bkg_opt_{'_'.join(years)}_B={B}_better_mass_cut.png",
+                bbox_inches="tight",
             )
             plt.show()
 
@@ -413,6 +538,22 @@ class Analyser:
             [sigs[max_significance_i], bgs[max_significance_i]],
             [bbcut_opt_significance, ttcut_opt_significance],
         )
+
+    # class output:
+    #     def __init__(self):
+    #         return
+
+    #     def max_sig(self, sig_yield, bg_yield, bbcut_opt, ttcut_opt):
+    #         self.sig_yield_max = sig_yield
+    #         self.bg_yield_max = bg_yield
+    #         self.bbcut_opt = bbcut_opt
+    #         self.ttcut_opt = ttcut_opt
+
+    #     def max_sig(self, sig_yield, bg_yield, bbcut_opt, ttcut_opt):
+    #         self.sig_yield_max = sig_yield
+    #         self.bg_yield_max = bg_yield
+    #         self.bbcut_opt = bbcut_opt
+    #         self.ttcut_opt = ttcut_opt
 
     @staticmethod
     def print_nicely(sig_yield, bg_yield, years):
@@ -458,8 +599,11 @@ class Analyser:
         )
         return
 
-    def as_df(self, sig_yield, bg_yield, years):
+    @staticmethod
+    def as_df(cut_bb, cut_tt, sig_yield, bg_yield, years):
         limits = {}
+        limits["Cut_Xbb"] = cut_bb
+        limits["Cut_Xtt"] = cut_tt
         limits["Sig_Yield"] = sig_yield
         limits["BG_Yield"] = bg_yield
         limits["Limit"] = 2 * np.sqrt(bg_yield) / sig_yield
@@ -473,8 +617,6 @@ class Analyser:
                     hh_vars.LUMI["2022-2023"] / np.sum([hh_vars.LUMI[year] for year in years])
                 )
             )
-        else:
-            limits["Limit_scaled_22_23"] = np.nan
 
         limits["Limit_scaled_22_24"] = (
             2
@@ -499,8 +641,8 @@ class Analyser:
 
 if __name__ == "__main__":
 
-    years = ["2022"]  # "2022EE", "2023", "2023BPix"]
-    test_mode = True  # reduces size of data to run all quickly
+    years = ["2022", "2022EE", "2023", "2023BPix"]  # "2022","2022EE","2023","2023BPix"
+    test_mode = False  # reduces size of data to run all quickly
 
     for c in [
         "hh",
@@ -516,24 +658,27 @@ if __name__ == "__main__":
         analyser.compute_rocs(years)
         analyser.plot_rocs(years, test_mode=test_mode)
         print("ROCs computed for channel ", c)
-        analyser.prepare_sensitivity(years)
+        # analyser.plot_mass(years, test_mode=test_mode)
+        # analyser.prepare_sensitivity(years)
 
-        results = {}
-        for B in [1, 2, 8]:
-            yields_B, cuts_B, yields_max_significance, cuts_max_significance = analyser.sig_bkg_opt(
-                years, gridsize=30, B=B, plot=True
-            )
-            sig_yield, bkg_yield = yields_B
-            sig_yield_max_sig, bkg_yield_max_sig = (
-                yields_max_significance  # not very clean rn, can be improved but should be the same
-            )
-            results[f"B={B}"] = analyser.as_df(sig_yield, bkg_yield, years)
-            print("done with B=", B)
-        results["Max_significance"] = analyser.as_df(sig_yield_max_sig, bkg_yield_max_sig, years)
-        results_df = pd.concat(results, axis=0)
-        results_df.index = results_df.index.droplevel(1)
-        print(c, "\n", results_df.T.to_markdown())
-        results_df.T.to_csv(
-            analyser.plot_dir / f"{'_'.join(years)}-results{'_fast' * test_mode}.csv"
-        )
+        # results = {}
+        # for B in [1, 2, 8]:
+        #     yields_B, cuts_B, yields_max_significance, cuts_max_significance = analyser.sig_bkg_opt(
+        #         years, gridsize=30, B=B, plot=True
+        #     )
+        #     sig_yield, bkg_yield = yields_B
+        #     cut_bb, cut_tt = cuts_B
+        #     sig_yield_max_sig, bkg_yield_max_sig = (
+        #         yields_max_significance  # not very clean rn, can be improved but should be the same
+        #     )
+        #     cut_bb_max_sig, cut_tt_max_sig = cuts_max_significance
+        #     results[f"B={B}"] = analyser.as_df(cut_bb, cut_tt, sig_yield, bkg_yield, years)
+        #     print("done with B=", B)
+        # results["Max_significance"] = analyser.as_df(cut_bb, cut_tt, sig_yield_max_sig, bkg_yield_max_sig, years)
+        # results_df = pd.concat(results, axis=0)
+        # results_df.index = results_df.index.droplevel(1)
+        # print(c, "\n", results_df.T.to_markdown())
+        # results_df.T.to_csv(
+        #     analyser.plot_dir / f"{'_'.join(years)}-results{'_fast' * test_mode}_better_mass_cut.csv"
+        # )
         del analyser

@@ -74,21 +74,43 @@ def bb_filters(num_fatjets: int = 3):
 
 def trigger_filter(
     triggers: dict[str, list[str]],
+    year: str,
     base_filters: list[tuple] = base_filters,
     fast_mode: bool = False,
+    PNetXbb_cut: float = None,
+    num_fatjets: int = 3,
 ) -> dict[str, dict[str, list[list[tuple]]]]:
     """
-    creates a list of filters for each trigger in the list of triggers. It is granular to the usual {"data" / "signal" : {year : [triggers],...} structure: triggers = {"data": {"2022" : [...] , ...}, "signal": { [...]}.
+    creates a list of filters for each trigger in the list of triggers. It is granular to triggers = {"data": { [...] , ...}, "signal": { [...]}.
     """
     if fast_mode:
         base_filters += [("('ak8FatJetPNetXbbLegacy', '0')", ">=", 0.95)]
 
     filters_dict = {}
 
+    if year == "2023":
+        skip_names = ["PNet", "Parking", "Quadjet"]
+        skip = []
+        for name in skip_names:
+            skip += HLTs.hlts_by_type(year, name)
+        triggers["data"] = [
+            trigger for trigger in triggers["data"] if trigger not in skip
+        ]  # exclude from filtering since they change mid-2023 and have dype as bool instead of int
+
+    if isinstance(triggers, dict):
+        print(triggers, year, "triggers should be a dictionary")
     for dtype, trigger_list in triggers.items():
         filters_dict[dtype] = [
             base_filters + [(f"('{trigger}', '0')", "==", 1)] for trigger in trigger_list
         ]
+
+    if PNetXbb_cut is not None:
+        extras = [
+            (f"('ak8FatJetPNetXbbLegacy', '{i}')", ">=", PNetXbb_cut) for i in range(num_fatjets)
+        ]
+        for dtype, filters in filters_dict.items():
+            filters_dict[dtype] = [branch + [extra] for branch in filters for extra in extras]
+
     return filters_dict
 
 
@@ -111,6 +133,7 @@ def get_columns(
             ("ak8FatJetPNetmassLegacy", num_fatjets),
             ("ak8FatJetParTmassResApplied", num_fatjets),
             ("ak8FatJetParTmassVisApplied", num_fatjets),
+            ("ak8FatJetMsd", num_fatjets),
         ]
 
     if ParT_taggers:
@@ -184,7 +207,7 @@ def load_samples(
 
         if sample.selector is not None:
 
-            print(f"Loading {key} ({sample.label})")
+            print(f"Loading {key} ({year})")
             events_dict[key] = utils.load_sample(
                 sample,
                 year,
