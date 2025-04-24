@@ -17,17 +17,19 @@ from bbtautau.bbtautau_utils import Channel
 from bbtautau.postprocessing import Samples
 
 
-def get_var(events: pd.DataFrame, feat: str):
+def get_var(events: pd.DataFrame, bbtt_mask: pd.DataFrame, feat: str):
     if feat in events:
         return events[feat].to_numpy().squeeze()
     elif feat.startswith(("bb", "tt")):
-        raise NotImplementedError("bb tautau assignment not yet implemented!")
+        jkey = feat[:2]
+        return events[feat.replace(jkey, "ak8")].to_numpy()[bbtt_mask[jkey]]
     elif utils.is_int(feat[-1]):
         return events[feat[:-1]].to_numpy()[:, int(feat[-1])].squeeze()
 
 
 def singleVarHist(
     events_dict: dict[str, pd.DataFrame],
+    bbtt_masks: dict[str, pd.DataFrame],
     shape_var: ShapeVar,
     channel: Channel,
     weight_key: str = "finalWeight",
@@ -63,7 +65,7 @@ def singleVarHist(
         else:
             fill_var = var
 
-        fill_data = {var: get_var(events, fill_var)}
+        fill_data = {var: get_var(events, bbtt_masks[sample], fill_var)}
         weight = events[weight_key].to_numpy().squeeze()
 
         if selection is not None:
