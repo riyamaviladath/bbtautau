@@ -32,38 +32,89 @@ base_filters = [
 
 
 control_plot_vars = (
-    # [
-    #     ShapeVar(var="MET_pt", label=r"$p^{miss}_T$ [GeV]", bins=[20, 0, 300]),
-    #     # ShapeVar(var="MET_phi", label=r"$\phi^{miss}$", bins=[20, -3.2, 3.2]),
-    # ]
-    # + [
-    #     ShapeVar(var=f"ak8FatJetPt{i}", label=rf"$p_T^{{j{i + 1}}}$ [GeV]", bins=[20, 250, 1250])
-    #     for i in range(3)
-    # ]
-    # + [
-    #     ShapeVar(var=f"ak8FatJetMsd{i}", label=rf"$m_{{SD}}^{{j{i + 1}}}$ [GeV]", bins=[20, 0, 300])
-    #     for i in range(3)
-    # ]
-    # + [
-    #     ShapeVar(var=f"ak8FatJetEta{i}", label=rf"$\eta^{{j{i + 1}}}$", bins=[20, -2.5, 2.5])
-    #     for i in range(3)
-    # ]
-    # + [
-    #     ShapeVar(var=f"ak8FatJetPhi{i}", label=rf"$\phi^{{j{i + 1}}}$", bins=[20, -3.2, 3.2])
-    #     for i in range(3)
-    # ]
-    # + [
-    #     ShapeVar(
-    #         var=f"ak8FatJetPNetmassLegacy{i}",
-    #         label=rf"PNet Legacy $m_{{reg}}^{{j{i + 1}}}$",
-    #         bins=[20, 0, 1],
-    #     )
-    #     for i in range(3)
-    # ]
     [
         ShapeVar(var=f"{jet}FatJetPt", label=rf"$p_T^{{{jlabel}}}$ [GeV]", bins=[20, 250, 1250])
-        for jet, jlabel in [("bb", "bb"), ("tt", r"$\tau\tau$")]
+        for jet, jlabel in [("bb", "bb"), ("tt", r"$\tau\tau$")
     ]
+    + [
+        ShapeVar(var="METPt", label=r"$p^{miss}_T$ [GeV]", bins=[20, 0, 300]), # METPt is used for resel samples
+        # ShapeVar(var="MET_phi", label=r"$\phi^{miss}$", bins=[20, -3.2, 3.2]),
+    ]
+    + [
+        ShapeVar(var=f"ak8FatJetPt{i}", label=rf"$p_T^{{j{i + 1}}}$ [GeV]", bins=[20, 250, 1250])
+        for i in range(3)
+    ]
+    + [
+        ShapeVar(var=f"ak8FatJetMsd{i}", label=rf"$m_{{SD}}^{{j{i + 1}}}$ [GeV]", bins=[20, 0, 300])
+        for i in range(3)
+    ]
+    + [
+        ShapeVar(var=f"ak8FatJetEta{i}", label=rf"$\eta^{{j{i + 1}}}$", bins=[20, -2.5, 2.5])
+        for i in range(3)
+    ]
+    + [
+        ShapeVar(var=f"ak8FatJetPhi{i}", label=rf"$\phi^{{j{i + 1}}}$", bins=[20, -3.2, 3.2])
+        for i in range(3)
+    ]
+    + [
+        ShapeVar(
+            var=f"ak8FatJetPNetmassLegacy{i}",
+            label=rf"PNet Legacy $m_{{reg}}^{{j{i + 1}}}$",
+            bins=[20, 50, 300],
+        )
+        for i in range(3)
+    ]
+    + [
+        ShapeVar(
+            var=f"ak8FatJetParTmassResApplied{i}",
+            label=rf"ParT Resonance $m_{{reg}}^{{j{i + 1}}}$",
+            bins=[20, 50, 300],
+        )
+        for i in range(3)
+    ]
+    + [
+        ShapeVar(
+            var=f"ak8FatJetParTmassVisApplied{i}",
+            label=rf"ParT Visable $m_{{reg}}^{{j{i + 1}}}$",
+            bins=[20, 50, 300],
+        )
+        for i in range(3)
+    ]
+    # ak8FatJetParTXbbvsQCD
+    + [
+        ShapeVar(
+            var=f"ak8FatJetParTXbbvsQCD{i}",
+            label=r"ParT XbbvsQCD$",
+            bins=[20, 0, 1],
+        )
+        for i in range(3)
+    ]
+    # ak8FatJetParTXbbvsQCDTop
+    + [
+        ShapeVar(
+            var=f"ak8FatJetParTXbbvsQCDTop{i}",
+            label=r"ParT XbbvsQCDTop$",
+            bins=[20, 0, 1],
+        )
+        for i in range(3)
+    ]
+    # ak8FatJetPNetXbbvsQCDLegacy
+    + [
+        ShapeVar(
+            var=f"ak8FatJetPNetXbbvsQCDLegacy{i}",
+            label=r"PNet Legacy XbbvsQCD$",
+            bins=[20, 0, 1],
+        )
+        for i in range(3)
+    ]
+    #  nElectrons
+    + [ShapeVar(var="nElectrons", label=r"Number of Electrons", bins=[3, 0, 2])]
+    #  nMuons
+    + [ShapeVar(var="nMuons", label=r"Number of Muons", bins=[3, 0, 2])]
+    #  nTaus
+    + [ShapeVar(var="nTaus", label=r"Number of Taus", bins=[3, 0, 2])]
+    #  nBoostedTaus
+    + [ShapeVar(var="nBoostedTaus", label=r"Number of Boosted Taus", bins=[3, 0, 2])]
 )
 
 
