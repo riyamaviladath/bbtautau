@@ -34,10 +34,12 @@ base_filters = [
 control_plot_vars = (
     [
         ShapeVar(var=f"{jet}FatJetPt", label=rf"$p_T^{{{jlabel}}}$ [GeV]", bins=[20, 250, 1250])
-        for jet, jlabel in [("bb", "bb"), ("tt", r"$\tau\tau$")
+        for jet, jlabel in [("bb", "bb"), ("tt", r"\tau\tau")]
     ]
     + [
-        ShapeVar(var="METPt", label=r"$p^{miss}_T$ [GeV]", bins=[20, 0, 300]), # METPt is used for resel samples
+        ShapeVar(
+            var="METPt", label=r"$p^{miss}_T$ [GeV]", bins=[20, 0, 300]
+        ),  # METPt is used for resel samples
         # ShapeVar(var="MET_phi", label=r"$\phi^{miss}$", bins=[20, -3.2, 3.2]),
     ]
     + [
@@ -250,7 +252,7 @@ def load_samples(
     for signal in signals:
         # quick fix due to old naming still in samples
         events_dict[f"{signal}{channel.key}"] = events_dict[signal][
-            events_dict[signal][f"GenTau{channel.key}" + "u" * (channel.key == "hm")][0]
+            events_dict[signal][f"GenTau{channel.key}"][0]
         ]
         del events_dict[signal]
 

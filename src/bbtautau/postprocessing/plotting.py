@@ -108,7 +108,7 @@ def ratioHistPlot(
     if cutlabel:
         ax.text(
             0.02,
-            0.8,
+            0.75,
             cutlabel,
             transform=ax.transAxes,
             fontsize=14,
