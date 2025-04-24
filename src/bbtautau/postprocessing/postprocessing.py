@@ -37,7 +37,9 @@ control_plot_vars = (
         for jet, jlabel in [("bb", "bb"), ("tt", r"\tau\tau")]
     ]
     + [
-        ShapeVar(var="METPt", label=r"$p^{miss}_T$ [GeV]", bins=[20, 0, 300]), # METPt is used for resel samples
+        ShapeVar(
+            var="METPt", label=r"$p^{miss}_T$ [GeV]", bins=[20, 0, 300]
+        ),  # METPt is used for resel samples
         # ShapeVar(var="MET_phi", label=r"$\phi^{miss}$", bins=[20, -3.2, 3.2]),
     ]
     + [
@@ -84,7 +86,7 @@ control_plot_vars = (
     + [
         ShapeVar(
             var=f"ak8FatJetParTXbbvsQCD{i}",
-            label=r"ParT XbbvsQCD$",
+            label=rf"ParT XbbvsQCD j{i+1}",
             bins=[20, 0, 1],
         )
         for i in range(3)
@@ -93,7 +95,7 @@ control_plot_vars = (
     + [
         ShapeVar(
             var=f"ak8FatJetParTXbbvsQCDTop{i}",
-            label=r"ParT XbbvsQCDTop$",
+            label=rf"ParT XbbvsQCDTop j{i+1}",
             bins=[20, 0, 1],
         )
         for i in range(3)
@@ -102,19 +104,19 @@ control_plot_vars = (
     + [
         ShapeVar(
             var=f"ak8FatJetPNetXbbvsQCDLegacy{i}",
-            label=r"PNet Legacy XbbvsQCD$",
+            label=rf"PNet Legacy XbbvsQCD j{i+1}",
             bins=[20, 0, 1],
         )
         for i in range(3)
     ]
     #  nElectrons
-    + [ShapeVar(var="nElectrons", label=r"Number of Electrons", bins=[3, 0, 2])]
+    + [ShapeVar(var="nElectrons", label=r"Number of Electrons", bins=[3, 0, 3])]
     #  nMuons
-    + [ShapeVar(var="nMuons", label=r"Number of Muons", bins=[3, 0, 2])]
+    + [ShapeVar(var="nMuons", label=r"Number of Muons", bins=[3, 0, 3])]
     #  nTaus
-    + [ShapeVar(var="nTaus", label=r"Number of Taus", bins=[3, 0, 2])]
+    + [ShapeVar(var="nTaus", label=r"Number of Taus", bins=[3, 0, 3])]
     #  nBoostedTaus
-    + [ShapeVar(var="nBoostedTaus", label=r"Number of Boosted Taus", bins=[3, 0, 2])]
+    + [ShapeVar(var="nBoostedTaus", label=r"Number of Boosted Taus", bins=[3, 0, 3])]
 )
 
 
