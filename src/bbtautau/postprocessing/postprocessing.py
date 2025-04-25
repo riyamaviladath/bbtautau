@@ -21,7 +21,7 @@ from boostedhh.utils import Sample, ShapeVar
 from bbtautau.bbtautau_utils import Channel
 from bbtautau.HLTs import HLTs
 
-base_filters = [
+base_filters_default = [
     ("('ak8FatJetPt', '0')", ">=", 250),
     ("('ak8FatJetPNetmassLegacy', '0')", ">=", 50),
     ("('ak8FatJetPt', '1')", ">=", 200),
@@ -66,7 +66,7 @@ control_plot_vars = (
 def bb_filters(num_fatjets: int = 3):
     filters = [
         # roughly, 85% signal efficiency, 2% QCD efficiency (pT: 250-400, mSD:0-250, mRegLegacy:40-250)
-        base_filters + [(f"('ak8FatJetPNetXbbLegacy', '{n}')", ">=", 0.3)]
+        base_filters_default + [(f"('ak8FatJetPNetXbbLegacy', '{n}')", ">=", 0.3)]
         for n in range(num_fatjets)
     ]
     return filters
@@ -75,7 +75,7 @@ def bb_filters(num_fatjets: int = 3):
 def trigger_filter(
     triggers: dict[str, list[str]],
     year: str,
-    base_filters: list[tuple] = base_filters,
+    base_filters: list[tuple] = None,
     fast_mode: bool = False,
     PNetXbb_cut: float = None,
     num_fatjets: int = 3,
@@ -83,6 +83,9 @@ def trigger_filter(
     """
     creates a list of filters for each trigger in the list of triggers. It is granular to triggers = {"data": { [...] , ...}, "signal": { [...]}.
     """
+    if base_filters is None:
+        base_filters = copy.deepcopy(base_filters)
+
     if fast_mode:
         base_filters += [("('ak8FatJetPNetXbbLegacy', '0')", ">=", 0.95)]
 

@@ -42,7 +42,7 @@ class HLTs:
         "pfjet": [
             HLT(
                 name="HLT_AK8PFJet420_MassSD30",
-                years=years_2023,
+                years=years,  # years_2023  makes it work in 25Mar7 data samples
                 dataset="JetMET",
             ),
             HLT(
@@ -154,13 +154,13 @@ class HLTs:
                 dataset="EGamma",
             ),
         ],
-        # "met": [
-        #     HLT(
-        #         name="HLT_PFMET120_PFMHT120_IDTight",
-        #         years=years,
-        #         dataset="JetMET",
-        #     ),
-        # ],
+        "met": [  # need to comment out ot make it work in 25Mar data samples
+            HLT(
+                name="HLT_PFMET120_PFMHT120_IDTight",
+                years=years,
+                dataset="JetMET",
+            ),
+        ],
         "parking": [
             # Moved to Parking in 2023 after 6fb-1
             HLT(
