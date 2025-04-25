@@ -217,7 +217,7 @@ class bbtautauSkimmer(SkimmerABC):
             "XtauhtauevsQCD",
             "XtauhtauevsQCDTop",
             "XtauhtaumvsQCD",
-            "XtauhtauevsQCDTop",
+            "XtauhtaumvsQCDTop",
             "XtauhtauhvsQCD",
             "XtauhtauhvsQCDTop",
         ]
