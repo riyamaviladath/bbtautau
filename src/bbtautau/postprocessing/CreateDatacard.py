@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import logging
 import pickle
+import warnings
 from collections import OrderedDict
 from pathlib import Path
 
@@ -27,7 +28,10 @@ from boostedhh.hh_vars import (
     jmsr_keys,
 )
 from boostedhh.hh_vars import years as hh_years
-from datacardHelpers import (
+from hist import Hist
+
+from bbtautau.bbtautau_utils import Channel
+from bbtautau.postprocessing.datacardHelpers import (
     ShapeVar,
     Syst,
     add_bool_arg,
@@ -35,13 +39,12 @@ from datacardHelpers import (
     rem_neg,
     sum_templates,
 )
-from hist import Hist
-
-from bbtautau.bbtautau_utils import Channel
 from bbtautau.postprocessing.Samples import (
     CHANNELS,
-    SIGNAL_CHANNELS,
     SIGNALS,
+    SIGNALS_CHANNELS,
+    sig_keys_ggf,
+    sig_keys_vbf,
     single_h_keys,
     ttbar_keys,
 )
@@ -56,6 +59,8 @@ except:
 logging.basicConfig(level=logging.INFO)
 adjust_posdef_yields = False
 
+
+warnings.filterwarnings("ignore", message="CMS_bbtautau_boosted_.*mcstat.*")
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -86,7 +91,7 @@ parser.add_argument(
 add_bool_arg(parser, "only-sm", "Only add SM HH samples", default=False)
 
 parser.add_argument(
-    "--sig-samples",
+    "--sigs",
     default=SIGNALS,
     nargs="*",
     type=str,
@@ -150,7 +155,9 @@ print("Transfer factors:", args.nTF)
 
 signal_regions = ["pass"] if args.regions == "pass" else args.regions
 
-channels = CHANNELS if args.channels == "all" else [CHANNELS[ch] for ch in args.channels]
+channels = (
+    list(CHANNELS.values()) if args.channels == "all" else [CHANNELS[ch] for ch in args.channels]
+)
 
 # (name in templates, name in cards)
 mc_samples = OrderedDict(
@@ -187,24 +194,19 @@ mc_samples_sig = OrderedDict(
     ]
 )
 
-# map different decay channels to same sample in datacard
-for key, value in mc_samples_sig.items():
-    for channel in channels:
-        mc_samples[f"{key}{channel.key}"] = value
-
 bg_keys = list(mc_samples.keys())
 
 if args.only_sm:
     sig_keys_ggf = [f"bbtt{channel.key}" for channel in channels]
     sig_keys_vbf = [f"vbfbbtt{channel.key}" for channel in channels]
 
-all_sig_keys = SIGNAL_CHANNELS
+all_sig_keys = SIGNALS_CHANNELS
 sig_keys = []
 hist_names = {}  # names of hist files for the samples
 
 for key in all_sig_keys:
-    # check in case single sig sample is specified
-    if args.sig_samples is None or key in args.sig_samples:
+    # check in case specific sig samples are specified
+    if args.sigs is None or key in args.sigs:
         for channel in channels:
             # change names to match HH combination convention
             mc_samples[f"{key}{channel.key}"] = mc_samples_sig[key]
@@ -498,13 +500,13 @@ def fill_regions(
             # don't add signals in fail regions
             if sample_name in sig_keys:
                 if pass_region:
-                    logging.info(f"\nSkipping {sample_name} in {region} region\n")
+                    logging.info(f"\t\tSkipping {sample_name} in {region} region")
                     continue
 
                 if sample_name[-2:] != channel.key:
                     continue
 
-            logging.info(f"\tTemplates for: {sample_name}")
+            logging.info(f"\t\tTemplates for: {sample_name}")
 
             sample_template = region_templates[sample_name, :]
 
@@ -551,7 +553,7 @@ def fill_regions(
                 if sample_name not in syst.samples or (not pass_region and syst.pass_only):
                     continue
 
-                logging.info(f"Getting {skey} rate")
+                logging.info(f"\t\t\tGetting {skey} rate")
 
                 param = nuisance_params_dict[skey]
 
@@ -687,7 +689,7 @@ def alphabet_fit(
     # Independent nuisances to float QCD in each fail bin
     qcd_params = np.array(
         [
-            rl.IndependentParameter(f"{CMS_PARAMS_LABEL}_tf_dataResidual_Bin{i}", 0)
+            rl.IndependentParameter(f"{CMS_PARAMS_LABEL}_tf_dataResidual_{channel.key}Bin{i}", 0)
             for i in range(m_obs.nbins)
         ]
     )

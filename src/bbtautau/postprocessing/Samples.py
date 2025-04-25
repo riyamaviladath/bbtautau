@@ -120,6 +120,9 @@ SAMPLES = {
 SIGNALS = ["bbtt", "vbfbbtt-k2v0"]
 SIGNALS_CHANNELS = SIGNALS.copy()
 
+sig_keys_ggf = ["bbtt"]
+sig_keys_vbf = ["vbfbbtt-k2v0"]
+
 # add individual bbtt channels
 for signal in SIGNALS.copy():
     for channel, CHANNEL in CHANNELS.items():
