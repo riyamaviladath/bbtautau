@@ -13,6 +13,9 @@ CHANNELS = {
         data_samples=["jetmet", "tau"],
         isLepton=False,
         tagger_label="tauhtauh",
+        txbb_cut=0.8,
+        txtt_cut=0.9,
+        tt_mass_cut=("PNetmassLegacy", [70, 150]),
     ),
     "he": Channel(
         key="he",
@@ -22,6 +25,9 @@ CHANNELS = {
         lepton_dataset="egamma",
         isLepton=True,
         tagger_label="tauhtaue",
+        txbb_cut=0.8,
+        txtt_cut=0.95,
+        tt_mass_cut=("ParTmassResApplied", [80, 210]),
     ),
     "hm": Channel(
         key="hm",
@@ -31,6 +37,9 @@ CHANNELS = {
         lepton_dataset="muon",
         isLepton=True,
         tagger_label="tauhtaum",
+        txbb_cut=0.8,
+        txtt_cut=0.9,
+        tt_mass_cut=("ParTmassResApplied", [80, 210]),
     ),
 }
 
@@ -101,6 +110,11 @@ SAMPLES = {
         label=r"ggF HHbb$\tau\tau$",
         isSignal=True,
     ),
+    "vbfbbtt": Sample(
+        selector=hh_vars.bbtt_sigs["vbfbbtt"],
+        label=r"VBF HHbb$\tau\tau$ (SM)",
+        isSignal=True,
+    ),
     "vbfbbtt-k2v0": Sample(
         selector=hh_vars.bbtt_sigs["vbfbbtt-k2v0"],
         label=r"VBF HHbb$\tau\tau$ ($\kappa_{2V}=0$)",
@@ -108,7 +122,7 @@ SAMPLES = {
     ),
 }
 
-SIGNALS = ["bbtt", "vbfbbtt-k2v0"]
+SIGNALS = ["bbtt", "vbfbbtt", "vbfbbtt-k2v0"]
 SIGNALS_CHANNELS = SIGNALS.copy()
 
 # add individual bbtt channels
