@@ -111,6 +111,7 @@ parser.add_argument(
     "--nTF",
     default=[2],
     type=int,
+    nargs="*",
     help="order of polynomial for TF.",
 )
 parser.add_argument(
@@ -488,7 +489,7 @@ def fill_regions(
     for region in regions:
         region_templates = templates_summed[region]
 
-        pass_region = region.startswith("pass")
+        pass_region = "pass" in region
         region_noblinded = region.split(MCB_LABEL)[0]
         blind_str = MCB_LABEL if region.endswith(MCB_LABEL) else ""  # noqa: F841
 
@@ -499,7 +500,7 @@ def fill_regions(
         for sample_name, card_name in mc_samples.items():
             # don't add signals in fail regions
             if sample_name in sig_keys:
-                if pass_region:
+                if not pass_region:
                     logging.info(f"\t\tSkipping {sample_name} in {region} region")
                     continue
 
@@ -715,7 +716,8 @@ def alphabet_fit(
             initial_qcd -= sample.getExpectation(nominal=True)
 
         if np.any(initial_qcd < 0.0):
-            raise ValueError("initial_qcd negative for some bins..", initial_qcd)
+            logging.warning(f"initial_qcd negative for some bins.. {initial_qcd}")
+            initial_qcd = np.maximum(initial_qcd, 1e-6)
 
         # idea here is that the error should be 1/sqrt(N), so parametrizing it as (1 + 1/sqrt(N))^qcdparams
         # will result in qcdparams errors ~±1

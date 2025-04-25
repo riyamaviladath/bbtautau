@@ -1,5 +1,5 @@
 #!/bin/bash
-# shellcheck disable=SC2086
+# shellcheck disable=SC2086,SC2043,SC2206
 
 
 ####################################################################################################
@@ -57,12 +57,18 @@ bias=-1
 mintol=0.1  # --cminDefaultMinimizerTolerance
 # maxcalls=1000000000  # --X-rtd MINIMIZER_MaxCalls
 CHANNELS=("hh" "he" "hm")
+channellabel=""
 
-options=$(getopt -o "wblsdrgti" --long "workspace,bfit,limits,significance,dfit,dfitasimov,toylimits,gofdata,goftoys,gentoys,dnll,impactsi,impactsf:,impactsc:,bias:,seed:,numtoys:,mintol:,toysname:,toysfile:,verbose:" -- "$@")
+options=$(getopt -o "wblsdrgti" --long "channel:,workspace,bfit,limits,significance,dfit,dfitasimov,toylimits,gofdata,goftoys,gentoys,dnll,impactsi,impactsf:,impactsc:,bias:,seed:,numtoys:,mintol:,toysname:,toysfile:,verbose:" -- "$@")
 eval set -- "$options"
 
 while true; do
     case "$1" in
+        --channel)
+            shift
+            CHANNELS=($1)
+            channellabel=$1
+            ;;
         -w|--workspace)
             workspace=1
             ;;
@@ -166,9 +172,9 @@ echo "Model: $(pwd)"
 
 dataset=data_obs
 cards_dir="./"
-ws=${cards_dir}/combined
+ws=${cards_dir}/combined_${channellabel}
 wsm=${ws}_withmasks
-wsm_snapshot=higgsCombineSnapshot.MultiDimFit.mH125
+wsm_snapshot=higgsCombine${channellabel}Snapshot.MultiDimFit.mH125
 
 outsdir=${cards_dir}/outs
 mkdir -p $outsdir
@@ -194,7 +200,7 @@ done
 # freeze fail region qcd params in blinded bins
 setparamsblinded=""
 freezeparamsblinded=""
-for channel in hh he hm; do
+for channel in "${CHANNELS[@]}"; do
     for bin in {5..7}
     do
         # would need to use regex here for multiple fail regions
@@ -247,7 +253,7 @@ if [ $workspace = 1 ]; then
     echo "Running text2workspace"
     # text2workspace.py -D $dataset $ws.txt --channel-masks -o $wsm.root 2>&1 | tee $outsdir/text2workspace.txt
     # new version got rid of -D arg??
-    text2workspace.py $ws.txt --channel-masks -o $wsm.root 2>&1 | tee $outsdir/text2workspace.txt
+    text2workspace.py $ws.txt --channel-masks -o $wsm.root 2>&1 | tee $outsdir/${channellabel}text2workspace.txt
 else
     if [ ! -f "$wsm.root" ]; then
         echo "Workspace doesn't exist! Use the -w|--workspace option to make workspace first"
@@ -262,7 +268,7 @@ if [ $bfit = 1 ]; then
     --cminDefaultMinimizerStrategy 1 --cminDefaultMinimizerTolerance "$mintol" --X-rtd MINIMIZER_MaxCalls=400000 \
     --setParameters "${maskunblindedargs},${setparamsblinded},r=0"  \
     --freezeParameters "r,${freezeparamsblinded}" \
-    -n Snapshot 2>&1 | tee $outsdir/MultiDimFit.txt
+    -n ${channellabel}Snapshot 2>&1 | tee $outsdir/${channellabel}MultiDimFit.txt
 else
     if [ ! -f "higgsCombineSnapshot.MultiDimFit.mH125.root" ]; then
         echo "Background-only fit snapshot doesn't exist! Use the -b|--bfit option to run fit first. (Ignore this if you're only creating the workspace.)"
@@ -273,10 +279,10 @@ fi
 
 if [ $limits = 1 ]; then
     echo "Expected limits (MC Unblinded)"
-    combine -M AsymptoticLimits -m 125 -n "" -d ${wsm_snapshot}.root --snapshotName MultiDimFit -v $verbose \
-    -t 1 --saveWorkspace --saveToys --bypassFrequentistFit \
+    combine -M AsymptoticLimits -m 125 -d ${wsm_snapshot}.root --snapshotName MultiDimFit -v $verbose -n "$channellabel" \
+    -t 1 --saveWorkspace --saveToys --bypassFrequentistFit --rMax 100 \
     ${unblindedparams},r=0 -s "$seed" \
-    --floatParameters "${freezeparamsblinded},r" --toysFrequentist --run blind 2>&1 | tee $outsdir/AsymptoticLimits.txt
+    --floatParameters "${freezeparamsblinded},r" --toysFrequentist --run blind 2>&1 | tee $outsdir/${channellabel}AsymptoticLimits.txt
 fi
 
 
@@ -307,14 +313,14 @@ if [ $dfit = 1 ]; then
     --setParameters "${maskunblindedargs},${setparamsblinded}" \
     --freezeParameters "${freezeparamsblinded}" \
     --cminDefaultMinimizerStrategy 1  --cminDefaultMinimizerTolerance "$mintol" --X-rtd MINIMIZER_MaxCalls=400000 \
-    -n Blinded --ignoreCovWarning -v $verbose 2>&1 | tee $outsdir/FitDiagnostics.txt
+    -n ${channellabel}Blinded --ignoreCovWarning -v $verbose 2>&1 | tee $outsdir/${channellabel}FitDiagnostics.txt
     # --saveShapes --saveNormalizations --saveWithUncertainties --saveOverallShapes \
 
     python $CMSSW_BASE/src/HiggsAnalysis/CombinedLimit/test/diffNuisances.py fitDiagnosticsBlinded.root -g nuisance_pulls.root --all --regex='^(?!.*mcstat)'  --vtol=0.3 --stol=0.1 --vtol2=2.0 --stol2=0.5
 
     echo "Fit Shapes"
-    PostFitShapesFromWorkspace --dataset "$dataset" -w ${wsm}.root --output FitShapes.root \
-    -m 125 -f fitDiagnosticsBlinded.root:fit_b --postfit --print 2>&1 | tee $outsdir/FitShapes.txt
+    PostFitShapesFromWorkspace --dataset "$dataset" -w ${wsm}.root --output ${channellabel}FitShapes.root \
+    -m 125 -f fitDiagnosticsBlinded.root:fit_b --postfit --print 2>&1 | tee $outsdir/${channellabel}FitShapes.txt
 fi
 
 

@@ -9,9 +9,12 @@ from __future__ import annotations
 import argparse
 import copy
 import json
+import logging
 import pickle
 import warnings
+from copy import deepcopy
 from pathlib import Path
+from pprint import pprint
 
 import hist
 import matplotlib as mpl
@@ -29,19 +32,19 @@ from bbtautau.postprocessing import Regions, Samples, plotting
 from bbtautau.postprocessing.Samples import CHANNELS, SAMPLES, SIGNALS
 from bbtautau.postprocessing.utils import LoadedSample
 
-# TODO: logging
-# log_config["root"]["level"] = "INFO"
-# logging.config.dictConfig(log_config)
-# logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger("boostedhh.utils")
 
 
 base_filters = [
-    ("('ak8FatJetPt', '0')", ">=", 250),
-    ("('ak8FatJetPNetmassLegacy', '0')", ">=", 50),
-    ("('ak8FatJetPt', '1')", ">=", 200),
-    # ("('ak8FatJetMsd', '0')", ">=", msd_cut),
-    # ("('ak8FatJetMsd', '1')", ">=", msd_cut),
-    # ("('ak8FatJetPNetXbb', '0')", ">=", 0.8),
+    [
+        ("('ak8FatJetPt', '0')", ">=", 250),
+        ("('ak8FatJetPNetmassLegacy', '0')", ">=", 50),
+        ("('ak8FatJetPt', '1')", ">=", 200),
+        # ("('ak8FatJetMsd', '0')", ">=", msd_cut),
+        # ("('ak8FatJetMsd', '1')", ">=", msd_cut),
+        # ("('ak8FatJetPNetXbb', '0')", ">=", 0.8),
+    ]
 ]
 
 
@@ -150,7 +153,7 @@ def main(args: argparse.Namespace):
 
     data_paths = {
         "signal": args.signal_data_dirs,
-        "data": args.data_dirs,
+        "data": args.data_dir,
         "bg": args.bg_data_dirs,
     }
 
@@ -160,9 +163,16 @@ def main(args: argparse.Namespace):
     if args.bgs is None:
         args.bgs = {bkey: b for bkey, b in SAMPLES.items() if b.get_type() == "bg"}
 
-    filters = bb_filters(num_fatjets=3, bb_cut=0.8) if args.templates else None
+    if args.templates:
+        filters = bb_filters(num_fatjets=3, bb_cut=0.3)
+        filters = tt_filters(CHANNEL, filters, num_fatjets=3, tt_cut=0.3)
+    else:
+        filters = None
 
     print("Loading samples")
+    print("Filters:")
+    pprint(filters)
+    print()
     # dictionary that will contain all information (from all samples)
     events_dict = load_samples(
         args.year,
@@ -183,6 +193,8 @@ def main(args: argparse.Namespace):
     cutflow.add_cut(events_dict, "Triggers", "finalWeight")
     print(cutflow.cutflow)
 
+    derive_variables(events_dict, CHANNEL)
+
     print("\nbbtautau assignment")
     bbtautau_assignment(events_dict, CHANNEL)
 
@@ -195,8 +207,8 @@ def main(args: argparse.Namespace):
         CHANNEL,
         shape_vars,
         {},  # TODO: systematics
-        pass_ylim=150,
-        fail_ylim=1e5,
+        # pass_ylim=150,
+        # fail_ylim=1e5,
         sig_scale_dict={f"bbtt{CHANNEL.key}": 300, f"vbfbbtt-k2v0{CHANNEL.key}": 40},
         template_dir=args.template_dir,
         plot_dir=args.plot_dir,
@@ -209,11 +221,40 @@ def main(args: argparse.Namespace):
     )
 
 
-def bb_filters(num_fatjets: int = 3, bb_cut: float = 0.3):
+def bb_filters(in_filters: list[tuple] = None, num_fatjets: int = 3, bb_cut: float = 0.3):
+    """
+    0.3 corresponds to roughly, 85% signal efficiency, 2% QCD efficiency (pT: 250-400, mSD:0-250, mRegLegacy:40-250)
+    """
+    if in_filters is None:
+        in_filters = base_filters
+
     filters = [
-        # roughly, 85% signal efficiency, 2% QCD efficiency (pT: 250-400, mSD:0-250, mRegLegacy:40-250)
-        base_filters + [(f"('ak8FatJetPNetXbbLegacy', '{n}')", ">=", bb_cut)]
+        ifilter + [(f"('ak8FatJetParTXbbvsQCD', '{n}')", ">=", bb_cut)]
         for n in range(num_fatjets)
+        for ifilter in in_filters
+    ]
+    return filters
+
+
+def tt_filters(
+    channel: Channel, in_filters: list[tuple] = None, num_fatjets: int = 3, tt_cut: float = 0.9
+):
+    if in_filters is None:
+        in_filters = base_filters
+
+    if channel.key == "hm":
+        warnings.warn(
+            "Temporarily applying vsQCD filter only for tauhtaum due to missing keys!", stacklevel=2
+        )
+        tt_cut = 0.05
+        vslabel = "vsQCD"
+    else:
+        vslabel = "vsQCDTop"
+
+    filters = [
+        ifilter + [(f"('ak8FatJetParTX{channel.tagger_label}{vslabel}', '{n}')", ">=", tt_cut)]
+        for n in range(num_fatjets)
+        for ifilter in in_filters
     ]
     return filters
 
@@ -539,6 +580,27 @@ def delete_columns(
                 )
             )
     return events_dict
+
+
+def derive_variables(events_dict: dict[str, LoadedSample], channel: Channel, num_fatjets: int = 3):
+    """Derive variables for each event."""
+    for sample in events_dict.values():
+        if "ak8FatJetPNetXbbvsQCDLegacy" not in sample.events:
+            Xbb = sample.get_var("ak8FatJetPNetXbbLegacy")
+            QCD = sample.get_var("ak8FatJetPNetQCDLegacy")
+            Xbb_vs_QCD = Xbb / (Xbb + QCD)
+
+            for n in range(num_fatjets):
+                sample.events[("ak8FatJetPNetXbbvsQCDLegacy", str(n))] = Xbb_vs_QCD[:, n]
+
+        if channel.key == "hm" and "ak8FatJetParTXtauhtaumvsQCDTop" not in sample.events:
+            tauhtaum = sample.get_var("ak8FatJetParTXtauhtaum")
+            qcd = sample.get_var("ak8FatJetParTQCD")
+            top = sample.get_var("ak8FatJetParTTop")
+            tauhtaum_vs_QCDTop = tauhtaum / (tauhtaum + qcd + top)
+
+            for n in range(num_fatjets):
+                sample.events[("ak8FatJetParTXtauhtaumvsQCDTop", str(n))] = tauhtaum_vs_QCDTop[:, n]
 
 
 def bbtautau_assignment_old(events_dict: dict[str, pd.DataFrame], channel: Channel):
@@ -963,6 +1025,7 @@ def get_templates(
                     "year": year,
                     "ylim": pass_ylim if pass_region else fail_ylim,
                     "plot_data": (not (rname == "pass" and blind_pass)) and plot_data,
+                    "leg_args": {"fontsize": 22, "ncol": 2},
                 }
 
                 plot_name = (
@@ -1155,18 +1218,20 @@ def parse_args(parser=None):
     if not args.bg_data_dirs and args.data_dir:
         args.bg_data_dirs = [args.data_dir]
 
+    save_args = deepcopy(args)
+
     # save args in args.plot_dir and args.template_dir if they exit
     if args.plot_dir:
-        args.plot_dir = Path(args.plot_dir)
+        args.plot_dir = Path(args.plot_dir) / args.channel / args.year
         args.plot_dir.mkdir(parents=True, exist_ok=True)
         with (args.plot_dir / "args.json").open("w") as f:
-            json.dump(args.__dict__, f)
+            json.dump(save_args.__dict__, f, indent=4)
 
     if args.template_dir:
-        args.template_dir = Path(args.template_dir)
-        args.template_dir.mkdir(parents=True, exist_ok=True)
+        args.template_dir = Path(args.template_dir) / args.channel
+        (args.template_dir / "cutflows" / args.year).mkdir(parents=True, exist_ok=True)
         with (args.template_dir / "args.json").open("w") as f:
-            json.dump(args.__dict__, f)
+            json.dump(save_args.__dict__, f, indent=4)
 
     print(args)
     return args
