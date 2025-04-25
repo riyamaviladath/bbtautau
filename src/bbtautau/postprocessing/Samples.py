@@ -142,6 +142,9 @@ BGS = [
     "hbb",
 ]
 
+single_h_keys = ["hbb"]
+ttbar_keys = ["ttbarhad", "ttbarsl", "ttbarll"]
+
 qcdouts = ["QCD0HF", "QCD1HF", "QCD2HF"]
 topouts = ["TopW", "TopbW", "TopbWev", "TopbWmv", "TopbWtauhv", "TopbWq", "TopbWqq"][:2]
 sigouts = ["Xtauhtauh", "Xtauhtaue", "Xtauhtaum", "Xbb"]
