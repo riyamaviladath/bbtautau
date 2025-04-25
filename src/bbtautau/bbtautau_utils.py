@@ -18,6 +18,10 @@ class Channel:
     data_samples: list[str]  # datasets for this channel
     hlt_types: list[str]  # list of HLT types
     isLepton: bool  # lepton channel or fully hadronic
+    tagger_label: str  # label for tagger score used
+    txbb_cut: float  # cut on bb tagger score
+    txtt_cut: float  # cut on tt tagger score
+    tt_mass_cut: tuple[str, list[float]]  # cut on tt mass
     lepton_dataset: str = None  # lepton dataset (if applicable)
 
     def triggers(
