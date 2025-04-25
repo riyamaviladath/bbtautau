@@ -523,11 +523,11 @@ class Analyser:
             handles.append(proxy)
             ax.legend(handles=handles, loc="lower left")
             plt.savefig(
-                self.plot_dir / f"sig_bkg_opt_{'_'.join(years)}_B={B}_better_mass_cut.pdf",
+                self.plot_dir / f"sig_bkg_opt_{'_'.join(years)}_B={B}.pdf",
                 bbox_inches="tight",
             )
             plt.savefig(
-                self.plot_dir / f"sig_bkg_opt_{'_'.join(years)}_B={B}_better_mass_cut.png",
+                self.plot_dir / f"sig_bkg_opt_{'_'.join(years)}_B={B}.png",
                 bbox_inches="tight",
             )
             plt.show()
@@ -658,27 +658,29 @@ if __name__ == "__main__":
         analyser.compute_rocs(years)
         analyser.plot_rocs(years, test_mode=test_mode)
         print("ROCs computed for channel ", c)
-        # analyser.plot_mass(years, test_mode=test_mode)
-        # analyser.prepare_sensitivity(years)
+        analyser.plot_mass(years, test_mode=test_mode)
+        analyser.prepare_sensitivity(years)
 
-        # results = {}
-        # for B in [1, 2, 8]:
-        #     yields_B, cuts_B, yields_max_significance, cuts_max_significance = analyser.sig_bkg_opt(
-        #         years, gridsize=30, B=B, plot=True
-        #     )
-        #     sig_yield, bkg_yield = yields_B
-        #     cut_bb, cut_tt = cuts_B
-        #     sig_yield_max_sig, bkg_yield_max_sig = (
-        #         yields_max_significance  # not very clean rn, can be improved but should be the same
-        #     )
-        #     cut_bb_max_sig, cut_tt_max_sig = cuts_max_significance
-        #     results[f"B={B}"] = analyser.as_df(cut_bb, cut_tt, sig_yield, bkg_yield, years)
-        #     print("done with B=", B)
-        # results["Max_significance"] = analyser.as_df(cut_bb, cut_tt, sig_yield_max_sig, bkg_yield_max_sig, years)
-        # results_df = pd.concat(results, axis=0)
-        # results_df.index = results_df.index.droplevel(1)
-        # print(c, "\n", results_df.T.to_markdown())
-        # results_df.T.to_csv(
-        #     analyser.plot_dir / f"{'_'.join(years)}-results{'_fast' * test_mode}_better_mass_cut.csv"
-        # )
+        results = {}
+        for B in [1, 2, 8]:
+            yields_B, cuts_B, yields_max_significance, cuts_max_significance = analyser.sig_bkg_opt(
+                years, gridsize=30, B=B, plot=True
+            )
+            sig_yield, bkg_yield = yields_B
+            cut_bb, cut_tt = cuts_B
+            sig_yield_max_sig, bkg_yield_max_sig = (
+                yields_max_significance  # not very clean rn, can be improved but should be the same
+            )
+            cut_bb_max_sig, cut_tt_max_sig = cuts_max_significance
+            results[f"B={B}"] = analyser.as_df(cut_bb, cut_tt, sig_yield, bkg_yield, years)
+            print("done with B=", B)
+        results["Max_significance"] = analyser.as_df(
+            cut_bb_max_sig, cut_tt_max_sig, sig_yield_max_sig, bkg_yield_max_sig, years
+        )
+        results_df = pd.concat(results, axis=0)
+        results_df.index = results_df.index.droplevel(1)
+        print(c, "\n", results_df.T.to_markdown())
+        results_df.T.to_csv(
+            analyser.plot_dir / f"{'_'.join(years)}-results{'_fast' * test_mode}.csv"
+        )
         del analyser
