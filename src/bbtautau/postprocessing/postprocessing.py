@@ -36,7 +36,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger("boostedhh.utils")
 
 
-base_filters = [
+base_filters_default = [
     [
         ("('ak8FatJetPt', '0')", ">=", 250),
         ("('ak8FatJetPNetmassLegacy', '0')", ">=", 50),
@@ -103,7 +103,7 @@ control_plot_vars = (
     + [
         ShapeVar(
             var=f"ak8FatJetParTXbbvsQCD{i}",
-            label=r"ParT XbbvsQCD$",
+            label=rf"ParT XbbvsQCD j{i+1}",
             bins=[20, 0, 1],
         )
         for i in range(3)
@@ -112,7 +112,7 @@ control_plot_vars = (
     + [
         ShapeVar(
             var=f"ak8FatJetParTXbbvsQCDTop{i}",
-            label=r"ParT XbbvsQCDTop$",
+            label=rf"ParT XbbvsQCDTop j{i+1}",
             bins=[20, 0, 1],
         )
         for i in range(3)
@@ -121,19 +121,19 @@ control_plot_vars = (
     + [
         ShapeVar(
             var=f"ak8FatJetPNetXbbvsQCDLegacy{i}",
-            label=r"PNet Legacy XbbvsQCD$",
+            label=rf"PNet Legacy XbbvsQCD j{i+1}",
             bins=[20, 0, 1],
         )
         for i in range(3)
     ]
     #  nElectrons
-    + [ShapeVar(var="nElectrons", label=r"Number of Electrons", bins=[3, 0, 2])]
+    + [ShapeVar(var="nElectrons", label=r"Number of Electrons", bins=[3, 0, 3])]
     #  nMuons
-    + [ShapeVar(var="nMuons", label=r"Number of Muons", bins=[3, 0, 2])]
+    + [ShapeVar(var="nMuons", label=r"Number of Muons", bins=[3, 0, 3])]
     #  nTaus
-    + [ShapeVar(var="nTaus", label=r"Number of Taus", bins=[3, 0, 2])]
+    + [ShapeVar(var="nTaus", label=r"Number of Taus", bins=[3, 0, 3])]
     #  nBoostedTaus
-    + [ShapeVar(var="nBoostedTaus", label=r"Number of Boosted Taus", bins=[3, 0, 2])]
+    + [ShapeVar(var="nBoostedTaus", label=r"Number of Boosted Taus", bins=[3, 0, 3])]
 )
 
 # fitting on bb regressed mass
@@ -226,7 +226,7 @@ def bb_filters(in_filters: list[tuple] = None, num_fatjets: int = 3, bb_cut: flo
     0.3 corresponds to roughly, 85% signal efficiency, 2% QCD efficiency (pT: 250-400, mSD:0-250, mRegLegacy:40-250)
     """
     if in_filters is None:
-        in_filters = base_filters
+        in_filters = base_filters_default
 
     filters = [
         ifilter + [(f"('ak8FatJetParTXbbvsQCD', '{n}')", ">=", bb_cut)]
@@ -240,7 +240,7 @@ def tt_filters(
     channel: Channel, in_filters: list[tuple] = None, num_fatjets: int = 3, tt_cut: float = 0.9
 ):
     if in_filters is None:
-        in_filters = base_filters
+        in_filters = base_filters_default
 
     if channel.key == "hm":
         warnings.warn(
@@ -261,23 +261,50 @@ def tt_filters(
 
 def trigger_filter(
     triggers: dict[str, list[str]],
-    base_filters: list[tuple] = base_filters,
+    year: str,
+    base_filters: list[tuple] = None,
     fast_mode: bool = False,
+    PNetXbb_cut: float = None,
+    num_fatjets: int = 3,
 ) -> dict[str, dict[str, list[list[tuple]]]]:
     """
-    creates a list of filters for each trigger in the list of triggers. It is granular to the usual {"data" / "signal" : {year : [triggers],...} structure: triggers = {"data": {"2022" : [...] , ...}, "signal": { [...]}.
+    creates a list of filters for each trigger in the list of triggers. It is granular to triggers = {"data": { [...] , ...}, "signal": { [...]}.
     """
+    if base_filters is None:
+        base_filters = copy.deepcopy(base_filters_default)
+
     if fast_mode:
-        base_filters += [("('ak8FatJetPNetXbbLegacy', '0')", ">=", 0.95)]
+        for i in range(len(base_filters)):
+            base_filters[i] += [("('ak8FatJetPNetXbbLegacy', '0')", ">=", 0.95)]
 
     filters_dict = {}
-    for dtype, years in triggers.items():
-        filters_dict[dtype] = {}
-        for year, trigger_list in years.items():
-            filters_dict[dtype][year] = [
-                base_filters + [(f"('{trigger}', '0')", "==", 1)] for trigger in trigger_list
-            ]
-    # print(f"\n\nTrigger filters_dict for data: {filters_dict['data']['2022'][0]}")
+
+    if year == "2023":
+        skip_names = ["PNet", "Parking", "Quadjet"]
+        skip = []
+        for name in skip_names:
+            skip += HLTs.hlts_by_type(year, name)
+
+        # exclude from filtering since they change mid-2023 and have dype as bool instead of int
+        triggers["data"] = [trigger for trigger in triggers["data"] if trigger not in skip]
+
+    if not isinstance(triggers, dict):
+        print(triggers, year, "triggers should be a dictionary")
+
+    for dtype, trigger_list in triggers.items():
+        filters_dict[dtype] = [
+            ifilter + [(f"('{trigger}', '0')", "==", 1)]
+            for trigger in trigger_list
+            for ifilter in base_filters
+        ]
+
+    if PNetXbb_cut is not None:
+        extras = [
+            (f"('ak8FatJetPNetXbbLegacy', '{i}')", ">=", PNetXbb_cut) for i in range(num_fatjets)
+        ]
+        for dtype, filters in filters_dict.items():
+            filters_dict[dtype] = [branch + [extra] for branch in filters for extra in extras]
+
     return filters_dict
 
 
@@ -300,6 +327,7 @@ def get_columns(
             ("ak8FatJetPNetmassLegacy", num_fatjets),
             ("ak8FatJetParTmassResApplied", num_fatjets),
             ("ak8FatJetParTmassVisApplied", num_fatjets),
+            ("ak8FatJetMsd", num_fatjets),
         ]
 
     if ParT_taggers:
@@ -321,7 +349,7 @@ def get_columns(
 
     columns_signal += [
         ("GenTauhh", 1),
-        ("GenTauhmu", 1),  # TODO this will need to be changed to GenTauhm
+        ("GenTauhm", 1),
         ("GenTauhe", 1),
     ]
 
@@ -338,7 +366,7 @@ def load_samples(
     year: str,
     channel: Channel,
     paths: dict[str],
-    filters_dict: dict[str, dict[str, list[list[tuple]]]] = None,
+    filters_dict: dict[str, list[list[tuple]]] = None,
     load_columns: dict[str, list[tuple]] = None,
     load_bgs: bool = False,
     load_data: bool = True,
@@ -358,7 +386,9 @@ def load_samples(
 
     if load_just_bbtt:  # quite ad hoc but should become obsolete
         del samples["vbfbbtt-k2v0"]
+        del samples["vbfbbtt"]
         signals.remove("vbfbbtt-k2v0")
+        signals.remove("vbfbbtt")
 
     # remove unnecessary data samples
     for key in Samples.DATASETS + (not load_bgs) * Samples.BGS:
@@ -373,11 +403,12 @@ def load_samples(
     # load samples
     for key, sample in samples.items():
         if isinstance(filters_dict, dict):
-            filters = filters_dict[sample.get_type()][year]
+            filters = filters_dict[sample.get_type()]
         else:
-            filters = filters_dict
+            filters = filters_dict  # this should not be used since the triggers change in data and MC on a given year
 
         if sample.selector is not None:
+
             events = utils.load_sample(
                 sample,
                 year,
@@ -395,7 +426,7 @@ def load_samples(
         if not loaded_samples:
             # quick fix due to old naming still in samples
             events_dict[f"{signal}{channel.key}"] = events_dict[signal][
-                events_dict[signal][f"GenTau{channel.key}" + "u" * (channel.key == "hm")][0]
+                events_dict[signal][f"GenTau{channel.key}"][0]
             ]
             del events_dict[signal]
         else:
@@ -567,15 +598,22 @@ def apply_triggers(
 
 
 def delete_columns(
-    events_dict: dict[str, pd.DataFrame], year: str, channel: Channel, triggers=True
+    events_dict: dict[str, LoadedSample | pd.DataFrame], year: str, channel: Channel, triggers=True
 ):
-    for sample_key, sample_events in events_dict.items():
-        print(sample_key, len(sample_events))
-        isData = Samples.SAMPLES[sample_key].isData
+    if not isinstance(next(iter(events_dict.values())), LoadedSample):
+        warnings.warn(
+            "Deprecation warning: Should switch to using the LoadedSample class in the future!",
+            stacklevel=1,
+        )
+        print("No action taken, events_dict is not a LoadedSample")
+        return events_dict
+
+    for sample in events_dict.values():
+        isData = sample.sample.isData
         if triggers:
-            sample_events.drop(
+            sample.events.drop(
                 columns=list(
-                    set(sample_events.columns)
+                    set(sample.events.columns)
                     - set(channel.triggers(year, data_only=isData, mc_only=not isData))
                 )
             )
