@@ -479,7 +479,9 @@ class Analyser:
         max_sig_idx = tuple(sel_idcs[opt_i])
         bbcut_opt, ttcut_opt = BBcut[max_sig_idx], TTcut[max_sig_idx]
 
-        significance = np.where(bgs > 0, sigs / np.sqrt(bgs), 0)
+        significance = np.divide(sigs, np.sqrt(bgs), out=np.zeros_like(sigs), where=(bgs > 0))
+
+        # significance = np.where(bgs > 0, sigs / np.sqrt(bgs), 0)
         max_significance_i = np.unravel_index(np.argmax(significance), significance.shape)
         bbcut_opt_significance, ttcut_opt_significance = (
             BBcut[max_significance_i],

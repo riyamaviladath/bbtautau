@@ -84,7 +84,7 @@ def trigger_filter(
     creates a list of filters for each trigger in the list of triggers. It is granular to triggers = {"data": { [...] , ...}, "signal": { [...]}.
     """
     if base_filters is None:
-        base_filters = copy.deepcopy(base_filters)
+        base_filters = copy.deepcopy(base_filters_default)
 
     if fast_mode:
         base_filters += [("('ak8FatJetPNetXbbLegacy', '0')", ">=", 0.95)]
