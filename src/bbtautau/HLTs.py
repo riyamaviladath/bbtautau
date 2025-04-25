@@ -60,12 +60,12 @@ class HLTs:
                 data_years=years_2022,
                 dataset="JetMET",
             ),
-            HLT(
-                name="HLT_QuadPFJet70_50_40_35_PNet2BTagMean0p65",
-                mc_years=[],
-                data_years=["2023"],
-                dataset="JetMET",
-            ),
+            # HLT( #This should be there but is not in 25Apr17 samples. For now just ignore
+            #     name="HLT_QuadPFJet70_50_40_35_PNet2BTagMean0p65",
+            #     mc_years=[],
+            #     data_years=["2023"],
+            #     dataset="JetMET",
+            # ),
             # 2022 + 2023
             HLT(
                 name="HLT_QuadPFJet103_88_75_15_PFBTagDeepJet_1p3_VBF2",

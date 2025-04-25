@@ -230,7 +230,7 @@ def get_columns(
 
     columns_signal += [
         ("GenTauhh", 1),
-        ("GenTauhmu", 1),  # TODO this will need to be changed to GenTauhm
+        ("GenTauhm", 1),
         ("GenTauhe", 1),
     ]
 
@@ -307,7 +307,7 @@ def load_samples(
         if not loaded_samples:
             # quick fix due to old naming still in samples
             events_dict[f"{signal}{channel.key}"] = events_dict[signal][
-                events_dict[signal][f"GenTau{channel.key}" + "u" * (channel.key == "hm")][0]
+                events_dict[signal][f"GenTau{channel.key}"][0]
             ]
             del events_dict[signal]
         else:
@@ -479,15 +479,22 @@ def apply_triggers(
 
 
 def delete_columns(
-    events_dict: dict[str, pd.DataFrame], year: str, channel: Channel, triggers=True
+    events_dict: dict[str, LoadedSample | pd.DataFrame], year: str, channel: Channel, triggers=True
 ):
-    for sample_key, sample_events in events_dict.items():
-        print(sample_key, len(sample_events))
-        isData = Samples.SAMPLES[sample_key].isData
+    if not isinstance(next(iter(events_dict.values())), LoadedSample):
+        warnings.warn(
+            "Deprecation warning: Should switch to using the LoadedSample class in the future!",
+            stacklevel=1,
+        )
+        print("No action taken, events_dict is not a LoadedSample")
+        return events_dict
+
+    for sample in events_dict.values():
+        isData = sample.sample.isData
         if triggers:
-            sample_events.drop(
+            sample.events.drop(
                 columns=list(
-                    set(sample_events.columns)
+                    set(sample.events.columns)
                     - set(channel.triggers(year, data_only=isData, mc_only=not isData))
                 )
             )
