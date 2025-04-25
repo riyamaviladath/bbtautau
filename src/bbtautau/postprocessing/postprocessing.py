@@ -100,7 +100,7 @@ def trigger_filter(
             trigger for trigger in triggers["data"] if trigger not in skip
         ]  # exclude from filtering since they change mid-2023 and have dype as bool instead of int
 
-    if isinstance(triggers, dict):
+    if not isinstance(triggers, dict):
         print(triggers, year, "triggers should be a dictionary")
     for dtype, trigger_list in triggers.items():
         filters_dict[dtype] = [
