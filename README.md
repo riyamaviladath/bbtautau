@@ -136,6 +136,102 @@ e.g.
 python boostedhh/condor/check_jobs.py --analysis bbtautau --tag 25Apr24_v12_private_signal --processor skimmer --check-running --year 2022EE
 ```
 
+
+## Postprocessing
+
+### Trigger study
+
+@Ludo - add instructions here.
+
+### Sensitivity study
+
+@Ludo - add instructions here.
+
+### Control plots
+
+@Billy - convert into script and add instructions here
+
+### Templates
+
+These are made using the `postprocessing/postprocessing.py` script with the `--templates` option.
+See `postprocessing/bash_scripts/MakeTemplates.sh` for an example.
+
+
+## Datacard and fits
+
+
+### CMSSW + Combine Quickstart
+
+**Warning: this should be done outside of your conda/mamba environment!**
+
+```bash
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+cmsrel CMSSW_14_1_0_pre4
+cd CMSSW_14_1_0_pre4/src
+cmsenv
+scram-venv
+cmsenv
+git clone -b v10.1.0 https://github.com/cms-analysis/HiggsAnalysis-CombinedLimit.git HiggsAnalysis/CombinedLimit
+git clone -b v3.0.0-pre1 https://github.com/cms-analysis/CombineHarvester.git CombineHarvester
+# Important: this scram has to be run from src dir
+scramv1 b clean; scramv1 b
+pip3 install --upgrade rhalphalib
+```
+
+Then, install this repo as well:
+
+```bash
+```bash
+cd /path/to/your/local/bbtautau/repo
+pip3 install -e .
+```
+
+### Create datacards
+
+After activating the above CMSSW environment (go inside the CMSSW folder and do `cmsenv`), you can use the CreateDatacard.py script as so:
+
+```bash
+python3 postprocessing/CreateDatacard.py --sigs bbtt --templates-dir templates/25Apr25LudoCuts --model-name 25Apr25PassFix
+```
+
+By default, this will create datacards for all three channels summed across years in the `cards/model-name` directory.
+
+As always, do the following to see a full list of options.
+
+```bash
+python3 postprocessing/CreateDatacard.py --help
+```
+
+### Combine scripts
+
+All combine commands while blinded can be run via the `src/bbtautau/combine/run_blinded_bbtt.sh` script.
+
+e.g. (always from inside the cards folders), this will combine the cards, create a workspace, do a background-only fit, and calculate expected limits:
+
+```bash
+run_blinded_bbtt.sh --workspace --bfit --limits
+```
+
+See more comments inside the file.
+
+
+I also add this to my .bashrc for convenience:
+
+```
+export PATH="$PATH:/home/user/rkansal/bbtautau/src/bbtautau/combine"
+```
+
+### Postfit plots
+
+Run the following to run FitDiagnostics and save FitShapes:
+
+```bash
+run_blinded_bbtt.sh --workspace --dfit
+```
+
+Then see `postprocessing/PlotFits.ipynb` for plotting. **TODO:** convert into script!
+
+
 ## Transferring files to FNAL with Rucio
 
 Set up Rucio following the [Twiki](https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookFileTransfer#Option_1_Using_the_Command_L_AN1). Then:
