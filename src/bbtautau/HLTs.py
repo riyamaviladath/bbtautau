@@ -154,7 +154,7 @@ class HLTs:
                 dataset="EGamma",
             ),
         ],
-        "met": [  # need to comment out ot make it work in 25Mar data samples
+        "met": [
             HLT(
                 name="HLT_PFMET120_PFMHT120_IDTight",
                 years=years,
@@ -326,3 +326,11 @@ class HLTs:
                 for hlt in sublist
             ],
         }
+
+    @classmethod
+    def get_hlt(cls, name: str) -> HLT:
+        for cat in cls.HLTs.values():
+            for hlt in cat:
+                if hlt.get_name() == name:
+                    return hlt
+        raise ValueError(f"HLT {name} not found in HLTs")
