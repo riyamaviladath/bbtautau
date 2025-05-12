@@ -91,6 +91,7 @@ class Analyser:
             raise TypeError(f"Expected HLT or str, got {type(hlt)}")
 
         if self.year not in hlt.mc_years:
+            # print(f"Trigger {hlt.name} not defined in MC for year {self.year}. Skipping.")
             return None
 
         name = hlt.get_name(True)
@@ -173,29 +174,36 @@ class Analyser:
                         ["pnet", "pfjet", "quadjet", "singletau", "ditau", "met"]
                     ),
                     "PNetBB": self.fired_events_by_trs(
-                        "HLT_AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35"
+                        [
+                            "HLT_AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
+                            "HLT_AK8PFJet230_SoftDropMass40_PNetBB0p06",
+                        ]
                     ),
                     "PNetTauTau": self.fired_events_by_trs(
-                        "HLT_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30"
+                        [
+                            "HLT_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30",
+                            "HLT_AK8PFJet230_SoftDropMass40_PNetTauTau0p03",
+                        ]
                     ),
-                    "PNet": self.fired_events_by_class("pnet"),
-                    "PFJet": self.fired_events_by_class("pfjet"),
-                    "MET": self.fired_events_by_class("met"),
                     "PNet | SingleTau | Di-tau": self.fired_events_by_class(
                         ["pnet", "singletau", "ditau"]
                     ),
                     "PNet | PFJet | Quad-jet": self.fired_events_by_class(
                         ["pnet", "pfjet", "quadjet"]
                     ),
-                    "PNet | PFJet | Quad-jet | SingleTau": self.fired_events_by_class(
-                        ["pnet", "pfjet", "quadjet", "singletau"]
-                    ),
-                    "PNet | PFJet | Quad-jet | Di-tau": self.fired_events_by_class(
-                        ["pnet", "pfjet", "quadjet", "ditau"]
-                    ),
-                    "PNet | PFJet | SingleTau | Di-tau": self.fired_events_by_class(
-                        ["pnet", "pfjet", "singletau", "ditau"]
-                    ),
+                    "Quad-jet": self.fired_events_by_class("quadjet"),
+                    "PNet": self.fired_events_by_class("pnet"),
+                    "PFJet": self.fired_events_by_class("pfjet"),
+                    "MET": self.fired_events_by_class("met"),
+                    # "PNet | PFJet | Quad-jet | SingleTau": self.fired_events_by_class(
+                    #     ["pnet", "pfjet", "quadjet", "singletau"]
+                    # ),
+                    # "PNet | PFJet | Quad-jet | Di-tau": self.fired_events_by_class(
+                    #     ["pnet", "pfjet", "quadjet", "ditau"]
+                    # ),
+                    # "PNet | PFJet | SingleTau | Di-tau": self.fired_events_by_class(
+                    #     ["pnet", "pfjet", "singletau", "ditau"]
+                    # ),
                 },
             },
             "hh_minus": {
@@ -206,11 +214,17 @@ class Analyser:
                         ["pnet", "pfjet", "quadjet", "met", "singletau", "ditau"]
                     ),
                     "-PNetBB": self.fired_events_by_trs(
-                        "HLT_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30"
+                        [
+                            "HLT_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30",
+                            "HLT_AK8PFJet230_SoftDropMass40_PNetTauTau0p03",
+                        ]
                     )
                     | self.fired_events_by_class(["pfjet", "met", "quadjet", "singletau", "ditau"]),
                     "-PNetTauTau": self.fired_events_by_trs(
-                        "HLT_AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35"
+                        [
+                            "HLT_AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
+                            "HLT_AK8PFJet230_SoftDropMass40_PNetBB0p06",
+                        ]
                     )
                     | self.fired_events_by_class(["pfjet", "quadjet", "met", "singletau", "ditau"]),
                     "-PFJet": self.fired_events_by_class(
@@ -238,10 +252,16 @@ class Analyser:
                         ["pnet", "muon", "met", "muontau", "singletau", "ditau", "pfjet"]
                     ),
                     "PNetBB": self.fired_events_by_trs(
-                        "HLT_AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35"
+                        [
+                            "HLT_AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
+                            "HLT_AK8PFJet230_SoftDropMass40_PNetBB0p06",
+                        ]
                     ),
                     "PNetTauTau": self.fired_events_by_trs(
-                        "HLT_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30"
+                        [
+                            "HLT_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30",
+                            "HLT_AK8PFJet230_SoftDropMass40_PNetTauTau0p03",
+                        ]
                     ),
                     "PNetBB | TauTau": self.fired_events_by_class("pnet"),
                     "Muon": self.fired_events_by_class("muon"),
@@ -261,13 +281,19 @@ class Analyser:
                         ["pnet", "muon", "muontau", "singletau", "ditau", "met", "pfjet"]
                     ),
                     "-PNetBB": self.fired_events_by_trs(
-                        "HLT_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30"
+                        [
+                            "HLT_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30",
+                            "HLT_AK8PFJet230_SoftDropMass40_PNetTauTau0p03",
+                        ]
                     )
                     | self.fired_events_by_class(
                         ["muon", "muontau", "singletau", "met", "ditau", "pfjet"]
                     ),
                     "-PNetTauTau": self.fired_events_by_trs(
-                        "HLT_AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35"
+                        [
+                            "HLT_AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
+                            "HLT_AK8PFJet230_SoftDropMass40_PNetBB0p06",
+                        ]
                     )
                     | self.fired_events_by_class(
                         ["muon", "muontau", "singletau", "met", "ditau", "pfjet"]
@@ -300,10 +326,16 @@ class Analyser:
                         ["pnet", "egamma", "etau", "met", "singletau", "ditau", "pfjet"]
                     ),
                     "PNetBB": self.fired_events_by_trs(
-                        "HLT_AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35"
+                        [
+                            "HLT_AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
+                            "HLT_AK8PFJet230_SoftDropMass40_PNetBB0p06",
+                        ]
                     ),
                     "PNetTauTau": self.fired_events_by_trs(
-                        "HLT_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30"
+                        [
+                            "HLT_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30",
+                            "HLT_AK8PFJet230_SoftDropMass40_PNetTauTau0p03",
+                        ]
                     ),
                     "PNetBB | TauTau": self.fired_events_by_class("pnet"),
                     "EGamma": self.fired_events_by_class("egamma"),
@@ -322,13 +354,19 @@ class Analyser:
                         ["pnet", "egamma", "etau", "singletau", "met", "ditau", "pfjet"]
                     ),
                     "-PNetBB": self.fired_events_by_trs(
-                        "HLT_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30"
+                        [
+                            "HLT_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30",
+                            "HLT_AK8PFJet230_SoftDropMass40_PNetTauTau0p03",
+                        ]
                     )
                     | self.fired_events_by_class(
                         ["egamma", "etau", "singletau", "met", "ditau", "pfjet"]
                     ),
                     "-PNetTauTau": self.fired_events_by_trs(
-                        "HLT_AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35"
+                        [
+                            "HLT_AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
+                            "HLT_AK8PFJet230_SoftDropMass40_PNetBB0p06",
+                        ]
                     )
                     | self.fired_events_by_class(
                         ["egamma", "etau", "met", "singletau", "ditau", "pfjet"]
@@ -472,7 +510,7 @@ class Analyser:
 
                 ax.set_ylabel("Events [A.U.]")
                 ax.legend()
-                ax.set_title(label)
+                ax.set_title(self.sample.label + " " + label)
                 ax.set_xlim(bins[0], bins[-1])
                 ax.set_ylim(0)
 
@@ -558,9 +596,9 @@ class Analyser:
                 trig_table.to_csv(self.plot_dir / f"trig_effs_{ch}.csv")
             print(trig_table.to_markdown(index=True))
 
-    def N2_efficiency_table(self, save=True):
+    def N2_efficiency_table(self, save=True, normalize_rows=False):
         """
-        Compute and print/save N2 (double trigger) efficiencies for each boosted selection and channel.
+        Compute and print/save N-2 (double trigger) efficiencies for each boosted selection and channel.
         For each pair of triggers, computes the efficiency of passing both triggers given the boosted selection.
         """
         boostedsels = {
@@ -581,19 +619,23 @@ class Analyser:
         for ch in CHANNELS:
             print(f"\nChannel: {ch}\n")
             mask = self.plot_dict[ch]["mask"]
-            triggers = self.plot_dict[f"{ch}_minus"]["triggers"]
-            trig_keys = list(triggers.keys())
+            trig_cls = self.plot_dict[f"{ch}_minus"]["triggers"]
+            trig_keys = list(trig_cls.keys())
 
             for bkey, sel in boostedsels.items():
                 trig_table = pd.DataFrame(index=trig_keys, columns=trig_keys)
                 for tkey1 in trig_keys:
-                    tsel1 = triggers[tkey1]
+                    tsel1 = trig_cls[tkey1]
                     for tkey2 in trig_keys:
-                        tsel2 = triggers[tkey2]
+                        tsel2 = trig_cls[tkey2]
                         if tkey1 == tkey2:
                             trig_table.loc[tkey1, tkey2] = "-"
                         else:
-                            denom = np.sum(mask & sel)
+                            denom = (
+                                np.sum(mask & sel)
+                                if not normalize_rows
+                                else np.sum(mask & sel & tsel1)
+                            )
                             if denom > 0:
                                 eff = np.sum(mask & sel & tsel1 & tsel2) / denom
                                 trig_table.loc[tkey1, tkey2] = f"{eff * 100:.1f}"
@@ -601,21 +643,96 @@ class Analyser:
                                 trig_table.loc[tkey1, tkey2] = "n/a"
                 if save:
                     trig_table.to_csv(
-                        self.plot_dir / f"trig_N2_effs_{ch}_{bkey.replace(' ', '_')}.csv"
+                        self.plot_dir
+                        / f"trig_N2_effs_{ch}_{bkey.replace(' ', '_')}_{normalize_rows*'norm_rows'}.csv"
                     )
                 print(f"\nBoosted Selection: {bkey}")
                 print(trig_table.to_markdown(index=True))
+
+    def progressive_trigger_removal(
+        self, trs: list[dict[str, str]], save: bool = True, name_tag: str = ""
+    ) -> None:
+        """
+        Compute and print/save the efficiency of progressively removing triggers one by one in sequence.
+        Args:
+            trigger_classes (List[str]): List of trigger classes to analyze in sequence
+            save (bool): Whether to save the results to CSV files
+        """
+        boostedsels = {
+            "1 boosted jet (> 250)": self.events_dict["ak8FatJetPt"][0] > 250,
+            "2 boosted jets (>250, >200)": (self.events_dict["ak8FatJetPt"][0] > 250)
+            & (self.events_dict["ak8FatJetPt"][1] > 200),
+            "2 boosted jets (>250, >200), XbbvsQCD > 0.95": (
+                (self.events_dict["ak8FatJetPt"][0] > 250)
+                & (self.events_dict["ak8FatJetPt"][1] > 200)
+                & (self.tvars["XbbvsQCD"] > 0.95).any(axis=1)
+            ),
+            "2 boosted jets (>250, >200), XbbvsQCDTop > 0.95": (
+                (self.events_dict["ak8FatJetPt"][0] > 250)
+                & (self.events_dict["ak8FatJetPt"][1] > 200)
+                & (self.tvars["XbbvsQCDTop"] > 0.95).any(axis=1)
+            ),
+        }
+        # same as in plot_dict,
+        trcls_by_ch = {
+            "hh": ["pnet", "pfjet", "quadjet", "singletau", "ditau", "met"],
+            "hm": ["pnet", "muon", "muontau", "singletau", "ditau", "met", "pfjet"],
+            "he": ["pnet", "egamma", "etau", "singletau", "met", "ditau", "pfjet"],
+        }
+
+        for ch in CHANNELS:
+            print(f"\nChannel: {ch}\n")
+            mask = self.plot_dict[ch]["mask"]
+
+            # Create DataFrame to store results for all boosted selections
+            results = pd.DataFrame(index=["All"] + [f"-{t['show_name']}" for t in trs])
+
+            # Calculate efficiency with all triggers for each boosted selection
+            for bkey, sel in boostedsels.items():
+                # Get the base efficiency with all triggers
+                all_triggers_mask = self.plot_dict[ch]["triggers"]["All"]
+                all_triggers_eff = np.sum(mask & sel & all_triggers_mask) / np.sum(mask & sel)
+
+                # Add column for this boosted selection
+                results.loc["All", bkey] = f"{all_triggers_eff * 100:.1f}%"
+
+                trs_all = set(HLTs.hlts_by_type(self.year, trcls_by_ch[ch], as_str=True))
+
+                # Progressively remove triggers one by one
+                for cl_or_tr in trs:
+                    if cl_or_tr["type"] == "cl":
+                        # remove all hlts in that class
+                        hlts_to_remove = HLTs.hlts_by_type(self.year, cl_or_tr["name"], as_str=True)
+                        for hlt in hlts_to_remove:
+                            trs_all.discard(hlt)  # Use discard instead of remove to avoid KeyError
+                        current_mask = self.fired_events_by_trs(list(trs_all))
+                        eff = np.sum(mask & sel & current_mask) / np.sum(mask & sel)
+                    elif cl_or_tr["type"] == "tr":
+                        # remove single hlt
+                        trs_all.discard(cl_or_tr["name"])  # Use discard instead of remove
+                        current_mask = self.fired_events_by_trs(list(trs_all))
+                        eff = np.sum(mask & sel & current_mask) / np.sum(mask & sel)
+
+                    results.loc[f"-{cl_or_tr['show_name']}", bkey] = f"{eff * 100:.1f}%"
+
+            # Transpose the DataFrame
+            results = results.T
+
+            # Add title in cell (0,0)
+            results.index.name = f"Trigger Efficiency ({self.sample.label}, {self.year}, {ch})"
+
+            if save:
+                results.to_csv(self.plot_dir / f"progressive_removal_{ch}_{name_tag}.csv")
+
+            print(results.to_markdown())
 
     def trigger_correlation_table(self, channels=CHANNELS):
         """
         Compute and print/save the correlation table between individual triggers for each channel.
         """
         for channel in channels:
-            # Get triggers and mask for the channel
             triggers = [hlt.lower() for hlt in CHANNELS[channel].hlt_types]
-            # Build DataFrame of trigger firings (bools) for masked events
             masks_by_class = pd.DataFrame({tr: self.fired_events_by_class(tr) for tr in triggers})
-            # Compute phi coefficient (Pearson for bools)
             phi_coeff = masks_by_class.corr(method="pearson")
             print(f"\nTrigger phi coefficient table for {channel}:")
             print(phi_coeff.to_markdown())
@@ -626,6 +743,8 @@ if __name__ == "__main__":
     # Load the data
     years = ["2022", "2022EE", "2023", "2023BPix"]
     for year in years:
+
+        print(f"\n\n\nYEAR {year}\n\n\n")
         for sig_key in SIGNALS:
             print("sig_key : ", sig_key)
             analyser = Analyser(year, sig_key)
@@ -637,5 +756,37 @@ if __name__ == "__main__":
 
             analyser.plot_channel(save=True)
             analyser.N1_efficiency_table(save=True)
-            analyser.N2_efficiency_table(save=True)
-            analyser.trigger_correlation_table()
+
+            if year == "2023BPix":
+                remove_trs = [
+                    {"type": "cl", "name": "parking", "show_name": "Parking"},
+                    {
+                        "type": "tr",
+                        "name": "HLT_AK8PFJet230_SoftDropMass40_PNetTauTau0p03",
+                        "show_name": "PNetTauTau ",
+                    },
+                    {"type": "cl", "name": "quadjet", "show_name": "QuadJet"},
+                    {"type": "cl", "name": "pfjet", "show_name": "PFJet"},
+                ]
+                analyser.progressive_trigger_removal(remove_trs, name_tag="", save=True)
+            if year == "2022":
+                remove_trs = [
+                    {
+                        "type": "tr",
+                        "name": "HLT_AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30",
+                        "show_name": "PNetTauTau ",
+                    },
+                    {
+                        "type": "tr",
+                        "name": "HLT_QuadPFJet70_50_40_35_PFBTagParticleNet_2BTagSum0p65",
+                        "show_name": "QuadJet70_50_40_35 ",
+                    },
+                    {"type": "cl", "name": "quadjet", "show_name": "QuadJet"},
+                    {"type": "cl", "name": "pfjet", "show_name": "PFJet"},
+                ]
+                analyser.progressive_trigger_removal(remove_trs, name_tag="", save=True)
+
+            # Some extra studies to keep in mind
+            # analyser.N2_efficiency_table(save=True)
+            # analyser.N2_efficiency_table(save=True,normalize_rows=True)
+            # analyser.trigger_correlation_table()

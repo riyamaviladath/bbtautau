@@ -9,7 +9,7 @@ CHANNELS = {
     "hh": Channel(
         key="hh",
         label=r"$\tau_h\tau_h$",
-        hlt_types=["PNet", "PFJet", "QuadJet", "DiTau", "DitauJet", "SingleTau"],
+        hlt_types=["PNet", "PFJet", "QuadJet", "Parking", "DiTau", "DitauJet", "SingleTau", "MET"],
         data_samples=["jetmet", "tau"],
         isLepton=False,
         tagger_label="tauhtauh",
@@ -20,7 +20,7 @@ CHANNELS = {
     "he": Channel(
         key="he",
         label=r"$\tau_h e$",
-        hlt_types=["PNet", "PFJet", "EGamma", "ETau", "DiTau", "DitauJet", "SingleTau"],
+        hlt_types=["PNet", "PFJet", "EGamma", "ETau", "DiTau", "DitauJet", "SingleTau", "MET"],
         data_samples=["jetmet", "tau", "egamma"],
         lepton_dataset="egamma",
         isLepton=True,
@@ -32,7 +32,7 @@ CHANNELS = {
     "hm": Channel(
         key="hm",
         label=r"$\tau_h \mu$",
-        hlt_types=["PNet", "PFJet", "Muon", "MuonTau", "DiTau", "DitauJet", "SingleTau"],
+        hlt_types=["PNet", "PFJet", "Muon", "MuonTau", "DiTau", "DitauJet", "SingleTau", "MET"],
         data_samples=["jetmet", "tau", "muon"],
         lepton_dataset="muon",
         isLepton=True,
