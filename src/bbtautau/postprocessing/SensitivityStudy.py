@@ -415,10 +415,82 @@ class Analyser:
                     bg_yield += np.sum(
                         self.events_dict[year][key].events["finalWeight"][cut & msb2]
                     )
-        return sig_yield, bg_yield
+        return sig_yield, bg_yield, 1
+
+    def compute_sig_bkg_abcd(self, years, txbbcut, txttcut, mbb1, mbb2, mbbw2, mtt1, mtt2):
+        # pass/fail from taggers
+        sig_pass = 0  # resonant region pass
+        sig_fail = 0  # resonant region fail
+        bg_pass = 0  # sidebands pass
+        bg_fail = 0  # sidebands fail
+        for year in years:
+            for key in [self.sig_key] + self.channel.data_samples:
+                if key == self.sig_key:
+                    cut = (
+                        (self.txbbs[year][key] > txbbcut)
+                        & (self.txtts[year][key] > txttcut)
+                        & (self.masstt[year][key] > mtt1)
+                        & (self.masstt[year][key] < mtt2)
+                        & (self.massbb[year][key] > mbb1)
+                        & (self.massbb[year][key] < mbb2)
+                        & (self.ptbb[year][key] > 250)
+                    )
+                    sig_pass += np.sum(self.events_dict[year][key].events["finalWeight"][cut])
+                else:  # compute background
+                    cut_bg_pass = (
+                        (self.txbbs[year][key] > txbbcut)
+                        & (self.txtts[year][key] > txttcut)
+                        & (self.masstt[year][key] > mtt1)
+                        & (self.masstt[year][key] < mtt2)
+                        & (self.ptbb[year][key] > 250)
+                    )
+                    msb1 = (self.massbb[year][key] > (mbb1 - mbbw2)) & (
+                        self.massbb[year][key] < mbb1
+                    )
+                    msb2 = (self.massbb[year][key] > mbb2) & (
+                        self.massbb[year][key] < (mbb2 + mbbw2)
+                    )
+                    bg_pass += np.sum(
+                        self.events_dict[year][key].events["finalWeight"][cut_bg_pass & msb1]
+                    )
+                    bg_pass += np.sum(
+                        self.events_dict[year][key].events["finalWeight"][cut_bg_pass & msb2]
+                    )
+                    cut_bg_fail = (
+                        ((self.txbbs[year][key] < txbbcut) | (self.txtts[year][key] < txttcut))
+                        & (self.masstt[year][key] > mtt1)
+                        & (self.masstt[year][key] < mtt2)
+                        & (self.ptbb[year][key] > 250)
+                    )
+                    bg_fail += np.sum(
+                        self.events_dict[year][key].events["finalWeight"][cut_bg_fail & msb1]
+                    )
+                    bg_fail += np.sum(
+                        self.events_dict[year][key].events["finalWeight"][cut_bg_fail & msb2]
+                    )
+                    cut_sig_fail = (
+                        ((self.txbbs[year][key] < txbbcut) | (self.txtts[year][key] < txttcut))
+                        & (self.masstt[year][key] > mtt1)
+                        & (self.masstt[year][key] < mtt2)
+                        & (self.massbb[year][key] > mbb1)
+                        & (self.massbb[year][key] < mbb2)
+                        & (self.ptbb[year][key] > 250)
+                    )
+                    sig_fail += np.sum(
+                        self.events_dict[year][key].events["finalWeight"][cut_sig_fail]
+                    )
+
+        return sig_pass, bg_pass, sig_fail / bg_fail
 
     def sig_bkg_opt(
-        self, years, gridsize=10, gridlims=(0.7, 1), B=1, normalize_sig=True, plot=False
+        self,
+        years,
+        gridsize=10,
+        gridlims=(0.7, 1),
+        B=1,
+        normalize_sig=True,
+        plot=False,
+        use_abcd=False,
     ):
         """
         Will have to improve definition of global params
@@ -440,9 +512,11 @@ class Analyser:
 
         BBcut, TTcut = np.meshgrid(bbcut, ttcut)
 
+        sig_bkg_f = self.compute_sig_bkg_abcd if use_abcd else self.compute_sig_bg
+
         # scalar function, must be vectorized
         def sig_bg(bbcut, ttcut):
-            return self.compute_sig_bg(
+            return sig_bkg_f(
                 years=years,
                 txbbcut=bbcut,
                 txttcut=ttcut,
@@ -453,7 +527,8 @@ class Analyser:
                 mtt2=mtt2,
             )
 
-        sigs, bgs = np.vectorize(sig_bg)(BBcut, TTcut)
+        sigs, bgs, tfs = np.vectorize(sig_bg)(BBcut, TTcut)
+        bgs_scaled = bgs * tfs
         if normalize_sig:
             tot_sig_weight = np.sum(
                 np.concatenate(
@@ -462,22 +537,27 @@ class Analyser:
             )
             sigs = sigs / tot_sig_weight
 
-        sel = (bgs >= 1) & (bgs <= B)
+        sel = (bgs_scaled > 0) & (bgs_scaled <= B)
+        B_initial = B
         if np.sum(sel) == 0:
-            B_initial = B
             while np.sum(sel) == 0 and B < 100:
                 B += 1
-                sel = (bgs >= 1) & (bgs <= B)
+                sel = (bgs_scaled > 0) & (bgs_scaled <= B)
             print(
                 f"Need a finer grid, no region with B={B_initial}. I'm extending the region to B in [1,{B}].",
-                bgs,
+                bgs_scaled,
             )
         sel_idcs = np.argwhere(sel)
         opt_i = np.argmax(sigs[sel])
         max_sig_idx = tuple(sel_idcs[opt_i])
         bbcut_opt, ttcut_opt = BBcut[max_sig_idx], TTcut[max_sig_idx]
 
-        significance = np.divide(sigs, np.sqrt(bgs), out=np.zeros_like(sigs), where=(bgs > 0))
+        significance = np.divide(
+            sigs,
+            np.sqrt(bgs_scaled + (bgs_scaled / np.sqrt(bgs)) ** 2),
+            out=np.zeros_like(sigs),
+            where=(bgs_scaled > 0),
+        )
 
         # significance = np.where(bgs > 0, sigs / np.sqrt(bgs), 0)
         max_significance_i = np.unravel_index(np.argmax(significance), significance.shape)
@@ -523,19 +603,21 @@ class Analyser:
             handles.append(proxy)
             ax.legend(handles=handles, loc="lower left")
             plt.savefig(
-                self.plot_dir / f"sig_bkg_opt_{'_'.join(years)}_B={B}.pdf",
+                self.plot_dir
+                / f"sig_bkg_opt_{'_'.join(years)}_B={B_initial}{'_abcd' if use_abcd else ''}.pdf",
                 bbox_inches="tight",
             )
             plt.savefig(
-                self.plot_dir / f"sig_bkg_opt_{'_'.join(years)}_B={B}.png",
+                self.plot_dir
+                / f"sig_bkg_opt_{'_'.join(years)}_B={B_initial}{'_abcd' if use_abcd else ''}.png",
                 bbox_inches="tight",
             )
             plt.show()
 
         return (
-            [sigs[max_sig_idx], bgs[max_sig_idx]],
+            [sigs[max_sig_idx], bgs[max_sig_idx], tfs[max_sig_idx]],
             [bbcut_opt, ttcut_opt],
-            [sigs[max_significance_i], bgs[max_significance_i]],
+            [sigs[max_significance_i], bgs[max_significance_i], tfs[max_significance_i]],
             [bbcut_opt_significance, ttcut_opt_significance],
         )
 
@@ -600,39 +682,34 @@ class Analyser:
         return
 
     @staticmethod
-    def as_df(cut_bb, cut_tt, sig_yield, bg_yield, years):
+    def as_df(cut_bb, cut_tt, sig_yield, bg_yield, tf, years):
         limits = {}
         limits["Cut_Xbb"] = cut_bb
         limits["Cut_Xtt"] = cut_tt
         limits["Sig_Yield"] = sig_yield
-        limits["BG_Yield"] = bg_yield
-        limits["Limit"] = 2 * np.sqrt(bg_yield) / sig_yield
+        limits["BG_Yield_scaled"] = bg_yield * tf
+        limits["TF"] = tf
+
+        def fom1(b, s):
+            return 2 * np.sqrt(b) / s
+
+        def fom2(b, s, _tf):
+            return 2 * np.sqrt(b * _tf + (b * _tf / np.sqrt(b)) ** 2) / s
+
+        limits[r"Limit, 2$\sqrt{b}/s$"] = fom1(bg_yield, sig_yield)
+        limits[r"Limit, 2$\sqrt{b + (b * \sigma_b)^2}/s$"] = fom2(bg_yield, sig_yield, tf)
 
         if "2023" not in years and "2023BPix" not in years:
-            limits["Limit_scaled_22_23"] = (
-                2
-                * np.sqrt(bg_yield)
-                / sig_yield
-                / np.sqrt(
-                    hh_vars.LUMI["2022-2023"] / np.sum([hh_vars.LUMI[year] for year in years])
-                )
+            limits["Limit_scaled_22_23"] = fom2(bg_yield, sig_yield, tf) / np.sqrt(
+                hh_vars.LUMI["2022-2023"] / np.sum([hh_vars.LUMI[year] for year in years])
             )
 
-        limits["Limit_scaled_22_24"] = (
-            2
-            * np.sqrt(bg_yield)
-            / sig_yield
-            / np.sqrt(
-                (124000 + hh_vars.LUMI["2022-2023"])
-                / np.sum([hh_vars.LUMI[year] for year in years])
-            )
+        limits["Limit_scaled_22_24"] = fom2(bg_yield, sig_yield, tf) / np.sqrt(
+            (124000 + hh_vars.LUMI["2022-2023"]) / np.sum([hh_vars.LUMI[year] for year in years])
         )
 
-        limits["Limit_scaled_Run3"] = (
-            2
-            * np.sqrt(bg_yield)
-            / sig_yield
-            / np.sqrt((360000) / np.sum([hh_vars.LUMI[year] for year in years]))
+        limits["Limit_scaled_Run3"] = fom2(bg_yield, sig_yield, tf) / np.sqrt(
+            (360000) / np.sum([hh_vars.LUMI[year] for year in years])
         )
 
         df_out = pd.DataFrame([limits])
@@ -643,6 +720,7 @@ if __name__ == "__main__":
 
     years = ["2022", "2022EE", "2023", "2023BPix"]  # "2022","2022EE","2023","2023BPix"
     test_mode = False  # reduces size of data to run all quickly
+    use_abcd = True
 
     for c in [
         "hh",
@@ -655,32 +733,33 @@ if __name__ == "__main__":
             analyser.load_year(year)
 
         analyser.build_tagger_dict()
-        analyser.compute_rocs(years)
-        analyser.plot_rocs(years, test_mode=test_mode)
-        print("ROCs computed for channel ", c)
-        analyser.plot_mass(years, test_mode=test_mode)
+        # analyser.compute_rocs(years)
+        # analyser.plot_rocs(years, test_mode=test_mode)
+        # print("ROCs computed for channel ", c)
+        # analyser.plot_mass(years, test_mode=test_mode)
         analyser.prepare_sensitivity(years)
 
         results = {}
         for B in [1, 2, 8]:
             yields_B, cuts_B, yields_max_significance, cuts_max_significance = analyser.sig_bkg_opt(
-                years, gridsize=30, B=B, plot=True
+                years, gridlims=(0.8, 0.999), gridsize=40, B=B, plot=True, use_abcd=use_abcd
             )
-            sig_yield, bkg_yield = yields_B
+            sig_yield, bkg_yield, tf = yields_B
             cut_bb, cut_tt = cuts_B
-            sig_yield_max_sig, bkg_yield_max_sig = (
+            sig_yield_max_sig, bkg_yield_max_sig, tf_max_sig = (
                 yields_max_significance  # not very clean rn, can be improved but should be the same
             )
             cut_bb_max_sig, cut_tt_max_sig = cuts_max_significance
-            results[f"B={B}"] = analyser.as_df(cut_bb, cut_tt, sig_yield, bkg_yield, years)
+            results[f"B={B}"] = analyser.as_df(cut_bb, cut_tt, sig_yield, bkg_yield, tf, years)
             print("done with B=", B)
         results["Max_significance"] = analyser.as_df(
-            cut_bb_max_sig, cut_tt_max_sig, sig_yield_max_sig, bkg_yield_max_sig, years
+            cut_bb_max_sig, cut_tt_max_sig, sig_yield_max_sig, bkg_yield_max_sig, tf_max_sig, years
         )
         results_df = pd.concat(results, axis=0)
         results_df.index = results_df.index.droplevel(1)
         print(c, "\n", results_df.T.to_markdown())
         results_df.T.to_csv(
-            analyser.plot_dir / f"{'_'.join(years)}-results{'_fast' * test_mode}.csv"
+            analyser.plot_dir
+            / f"{'_'.join(years)}-results{'_fast' * test_mode}{'_abcd' if use_abcd else ''}.csv"
         )
         del analyser
