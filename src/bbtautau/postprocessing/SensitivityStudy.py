@@ -742,7 +742,7 @@ if __name__ == "__main__":
         results = {}
         for B in [1, 2, 8]:
             yields_B, cuts_B, yields_max_significance, cuts_max_significance = analyser.sig_bkg_opt(
-                years, gridlims=(0.8, 0.999), gridsize=40, B=B, plot=True, use_abcd=use_abcd
+                years, gridlims=(0.8, 1), gridsize=40, B=B, plot=True, use_abcd=use_abcd
             )
             sig_yield, bkg_yield, tf = yields_B
             cut_bb, cut_tt = cuts_B
