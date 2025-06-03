@@ -22,6 +22,8 @@ def get_processor(
     save_systematics: bool | None = None,
     region: str | None = None,
     nano_version: str | None = None,
+    fatjet_pt_cut: float | None = None,
+    fatjet_bb_preselection: bool | None = None,
 ):
     # define processor
     if processor == "skimmer":
@@ -32,6 +34,8 @@ def get_processor(
             save_systematics=save_systematics,
             region=region,
             nano_version=nano_version,
+            fatjet_pt_cut=fatjet_pt_cut,
+            fatjet_bb_preselection=fatjet_bb_preselection,
         )
 
 
@@ -41,6 +45,8 @@ def main(args):
         args.save_systematics,
         args.region,
         args.nano_version,
+        args.fatjet_pt_cut,
+        args.fatjet_bb_preselection,
     )
 
     save_parquet = {"skimmer": True}[args.processor]
@@ -94,7 +100,8 @@ def main(args):
             skipbadfiles=skipbadfiles,
             save_parquet=save_parquet,
             save_root=save_root and args.save_root,
-            filetag=f"{args.starti}-{args.endi}",
+            filetag=f"{args.starti}-{args.endi}" if args.file_tag is None else args.file_tag,
+            batch_size=args.batch_size,
         )
 
 
@@ -104,4 +111,11 @@ if __name__ == "__main__":
     run_utils.parse_common_hh_args(parser)
     bbtautau_utils.parse_common_run_args(parser)
     args = parser.parse_args()
+
+    if isinstance(args.year, list):
+        if len(args.year) == 1:
+            args.year = args.year[0]
+        else:
+            raise ValueError("Running on multiple years is not supported yet")
+
     main(args)

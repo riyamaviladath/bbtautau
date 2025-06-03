@@ -43,6 +43,13 @@ def main(args):
     )
 
     processor_args = f"--region {args.region}"
+    if args.fatjet_pt_cut is not None:
+        processor_args += f" --fatjet-pt-cut {args.fatjet_pt_cut}"
+    processor_args += (
+        " --fatjet-bb-preselection"
+        if args.fatjet_bb_preselection
+        else " --no-fatjet-bb-preselection"
+    )
     submit_utils.submit(args, proxy, t2_prefixes, outdir, local_dir, fileset, processor_args)
 
 
@@ -54,20 +61,30 @@ if __name__ == "__main__":
     bbtautau_utils.parse_common_run_args(parser)
     args = parser.parse_args()
 
+    print(f"Submitting for years {args.year}")
+    years = args.year
+
     # YAML check
     if args.yaml is not None:
         with Path(args.yaml).open() as file:
             samples_to_submit = yaml.safe_load(file)
 
         tag = args.tag
-        for key, tdict in samples_to_submit.items():
-            # print(f"Submitting for year {key}")
-            args.year = key
+        for year in years:
+            print(f"Submitting for year {year}")
+            if year in samples_to_submit:
+                tdict = samples_to_submit[year]
+            else:
+                print(f"Year-specific settings for {year} not found in YAML; using full YAML")
+                tdict = samples_to_submit
+            
+            args.year = year
             for sample, sdict in tdict.items():
                 args.samples = [sample]
                 subsamples = sdict.get("subsamples", [])
                 args.maxchunks = sdict.get("maxchunks", 0)
                 args.chunksize = sdict.get("chunksize", 40000)
+                args.batch_size = sdict.get("batch_size", 20)
                 args.tag = tag
                 files_per_job = sdict["files_per_job"]
                 if isinstance(files_per_job, dict):

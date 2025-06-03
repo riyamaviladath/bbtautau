@@ -44,7 +44,7 @@ def _sum_taus(taut):
 
 def gen_selection_HHbbtautau(
     events: NanoEventsArray,
-    fatjets: FatJetArray,
+    fatjets: FatJetArray,  # noqa: ARG001
     selection_args: list,
 ):
     """Gets HH, bb, and tautau 4-vectors + tau decay information"""
@@ -69,7 +69,8 @@ def gen_selection_HHbbtautau(
     # checking that there are 2 bs and 2 taus
     has_bb = ak.sum(ak.flatten(is_bb, axis=2), axis=1) == 2
     has_tt = ak.sum(ak.flatten(is_tt, axis=2), axis=1) == 2
-    add_selection("has_bbtautau", has_bb * has_tt, *selection_args)
+    if selection_args is not None:
+        add_selection("has_bbtautau", has_bb * has_tt, *selection_args)
 
     bb = ak.flatten(higgs_children[is_bb], axis=2)
     GenbbVars = {f"Genbb{key}": pad_val(bb[var], 2, axis=1) for (var, key) in P4.items()}
@@ -90,27 +91,27 @@ def gen_selection_HHbbtautau(
     taue = _sum_taus(ak.any(np.abs(tau_children.pdgId) == PDGID.e, axis=2))
 
     GenTauVars["GenTauhh"] = (tauh == 2).to_numpy()
-    GenTauVars["GenTauhmu"] = ((tauh == 1) & (taumu == 1)).to_numpy()
+    GenTauVars["GenTauhm"] = ((tauh == 1) & (taumu == 1)).to_numpy()
     GenTauVars["GenTauhe"] = ((tauh == 1) & (taue == 1)).to_numpy()
 
     # fatjet gen matching
-    Hbb = higgs[ak.sum(is_bb, axis=2) == 2]
-    Hbb = ak.pad_none(Hbb, 1, axis=1, clip=True)[:, 0]
+    # Hbb = higgs[ak.sum(is_bb, axis=2) == 2]
+    # Hbb = ak.pad_none(Hbb, 1, axis=1, clip=True)[:, 0]
 
-    Htt = higgs[ak.sum(is_tt, axis=2) == 2]
-    Htt = ak.pad_none(Htt, 1, axis=1, clip=True)[:, 0]
+    # Htt = higgs[ak.sum(is_tt, axis=2) == 2]
+    # Htt = ak.pad_none(Htt, 1, axis=1, clip=True)[:, 0]
 
     # TODO: check more than just the leading two fatjets!
-    bbdr = fatjets[:, :2].delta_r(Hbb)
-    ttdr = fatjets[:, :2].delta_r(Htt)
+    # bbdr = fatjets[:, :2].delta_r(Hbb)
+    # ttdr = fatjets[:, :2].delta_r(Htt)
 
-    match_dR = 0.8
-    Hbb_match = bbdr <= match_dR
-    Htt_match = ttdr <= match_dR
+    # match_dR = 0.8
+    # Hbb_match = bbdr <= match_dR
+    # Htt_match = ttdr <= match_dR
 
-    # overlap removal - in the case where fatjet is matched to both, match it only to the closest Higgs
-    Hbb_match = (Hbb_match * ~Htt_match) + (bbdr <= ttdr) * (Hbb_match * Htt_match)
-    Htt_match = (Htt_match * ~Hbb_match) + (bbdr > ttdr) * (Hbb_match * Htt_match)
+    # # overlap removal - in the case where fatjet is matched to both, match it only to the closest Higgs
+    # Hbb_match = (Hbb_match * ~Htt_match) + (bbdr <= ttdr) * (Hbb_match * Htt_match)
+    # Htt_match = (Htt_match * ~Hbb_match) + (bbdr > ttdr) * (Hbb_match * Htt_match)
 
     # GenMatchingVars = {
     #     "ak8FatJetHbb": pad_val(Hbb_match, 2, axis=1),

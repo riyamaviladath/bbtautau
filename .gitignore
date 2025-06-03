@@ -16,6 +16,7 @@ eggs/
 .eggs/
 lib/
 lib64/
+micromamba/
 parts/
 sdist/
 var/
@@ -160,6 +161,7 @@ Thumbs.db
 
 *.root
 *.parquet
+*.txt
 test.ipynb
 **/__pycache__
 **/.DS_Store
@@ -173,18 +175,11 @@ docker_stderror
 /*.out
 /*.log
 /condor
-src/HH4b/postprocessing/**/*.png
-src/HH4b/postprocessing/**/*.pdf
-src/HH4b/boosted/**/*.png
-src/HH4b/boosted/**/*.pdf
-src/HH4b/boosted/**/*roc_dict.pkl
-src/HH4b/boosted/**/*.pkl
 **/*test.ipynb
 **/*.json
 
 !data/*.json
-
-running_jobs.txt
+!src/bbtautau/postprocessing/templates/**/*.json
 
 .bashrc
 .condor_config
